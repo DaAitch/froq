@@ -21,10 +21,10 @@
   "author": "Philipp Renoth <renoth@wildoak.de>",
   "license": "MIT",
   "dependencies": {
+    "froq-util": "^0.0.1",
     "http": "0.0.0",
     "http-proxy": "^1.16.2",
-    "mime-types": "^2.1.17",
-    "froq-util": "^0.0.1"
+    "mime-types": "^2.1.17"
   },
   "devDependencies": {
     "ava": "^0.24.0",
