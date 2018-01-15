@@ -1,6 +1,6 @@
 {
   "name": "froq-glassfish",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Integration Testing environment orchestration made easy for Glassfish.",
   "main": "lib/index.js",
   "scripts": {
@@ -23,7 +23,7 @@
   "dependencies": {
     "JSONStream": "^1.3.2",
     "form-data": "^2.3.1",
-    "froq-util": "^0.0.1",
+    "froq-util": "^0.0.3",
     "node-fetch": "^1.7.3"
   },
   "devDependencies": {

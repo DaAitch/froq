@@ -1,0 +1,1 @@
+{"version":3,"sources":["../src/index.js"],"names":["fromSocket","socketFile"],"mappings":";;;;;;AAAA;;;;;;kBAEe;AACXA,gBAAY,gCAAc;AACtB,eAAO,iBAAOA,UAAP,CAAkBC,UAAlB,CAAP;AACH;AAHU,C","file":"index.js","sourcesContent":["import Docker from './Docker';\n\nexport default {\n    fromSocket: socketFile => {\n        return Docker.fromSocket(socketFile);\n    }\n};"]}

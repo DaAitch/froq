@@ -1,0 +1,1 @@
+{"version":3,"sources":["../src/index.js"],"names":["docker","glassfish","http"],"mappings":";;;;;;AAAA;;;;AACA;;;;AACA;;;;;;kBAEe;AACXA,gCADW;AAEXC,sCAFW;AAGXC;AAHW,C","file":"index.js","sourcesContent":["import docker from 'froq-docker';\nimport glassfish from 'froq-glassfish';\nimport http from 'froq-http';\n\nexport default {\n    docker,\n    glassfish,\n    http\n};"]}

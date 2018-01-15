@@ -1,0 +1,1 @@
+{"version":3,"sources":["../src/index.js"],"names":["url","user","password"],"mappings":";;;;;;AAAA;;;;;;kBAEe,UAACA,GAAD,EAAMC,IAAN,EAAYC,QAAZ;AAAA,SAAyB,wBAAcF,GAAd,EAAmBC,IAAnB,EAAyBC,QAAzB,CAAzB;AAAA,C","file":"index.js","sourcesContent":["import Glassfish from './Glassfish';\n\nexport default (url, user, password) => new Glassfish(url, user, password);"]}

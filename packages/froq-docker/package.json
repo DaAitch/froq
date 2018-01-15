@@ -1,6 +1,6 @@
 {
   "name": "froq-docker",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "main": "lib/index.js",
   "scripts": {
     "build": "babel -s -d ./lib src",
@@ -22,7 +22,7 @@
   "description": "Integration Testing environment orchestration made easy for Docker.",
   "dependencies": {
     "dockerode": "^2.5.3",
-    "froq-util": "^0.0.1",
+    "froq-util": "^0.0.3",
     "os": "^0.1.1"
   },
   "devDependencies": {

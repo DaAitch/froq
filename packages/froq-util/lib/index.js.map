@@ -1,0 +1,1 @@
+{"version":3,"sources":["../src/index.js"],"names":["log","parallel"],"mappings":";;;;;;;AAAA;;;;AACA;;;;;;QAGIA,G;QACAC,Q","file":"index.js","sourcesContent":["import log from './log';\nimport parallel from './parallel';\n\nexport {\n    log,\n    parallel\n};"]}
