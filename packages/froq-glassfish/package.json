@@ -1,6 +1,6 @@
 {
   "name": "froq-glassfish",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Integration Testing environment orchestration made easy for Glassfish.",
   "main": "lib/index.js",
   "scripts": {

@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import log from '../log';
+import { log } from 'froq-util';
 import FormData from 'form-data';
 import fs from 'fs';
 import { format } from 'url';

@@ -12,9 +12,7 @@ var _nodeFetch = require('node-fetch');
 
 var _nodeFetch2 = _interopRequireDefault(_nodeFetch);
 
-var _log = require('../log');
-
-var _log2 = _interopRequireDefault(_log);
+var _froqUtil = require('froq-util');
 
 var _formData = require('form-data');
 
@@ -76,7 +74,7 @@ var Glassfish = function () {
                                     authorization: 'Basic ' + new Buffer(this._user + ':' + this._password).toString('base64')
                                 }, opts.headers || {});
 
-                                _log2.default.info('fetch ' + url + ' with ' + JSON.stringify(opts));
+                                _froqUtil.log.info('fetch ' + url + ' with ' + JSON.stringify(opts));
                                 _context.next = 5;
                                 return (0, _nodeFetch2.default)(url, opts);
 
@@ -130,7 +128,7 @@ var Glassfish = function () {
                                 json = _context2.sent;
                                 gftoken = json.extraProperties.token;
 
-                                _log2.default.info('got token ' + gftoken);
+                                _froqUtil.log.info('got token ' + gftoken);
                                 this._gftoken = gftoken;
 
                             case 11:

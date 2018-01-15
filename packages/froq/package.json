@@ -1,6 +1,6 @@
 {
   "name": "froq",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "main": "lib/index.js",
   "scripts": {
     "test": "ava test/*.test.js",
@@ -21,7 +21,7 @@
   "description": "Integration Testing environment orchestration made easy.",
   "dependencies": {
     "froq-docker": "^0.0.3",
-    "froq-glassfish": "^0.0.3",
+    "froq-glassfish": "^0.0.4",
     "froq-http": "^0.0.3"
   },
   "devDependencies": {
