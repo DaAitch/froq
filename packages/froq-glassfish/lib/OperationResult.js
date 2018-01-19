@@ -39,6 +39,11 @@ var OperationResult = function () {
          */
 
     }, {
+        key: "asError",
+        value: function asError() {
+            return new Error("exit_code: " + this.exitCode + ", message: " + this.message);
+        }
+    }, {
         key: "command",
         get: function get() {
             return this._json.command;

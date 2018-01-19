@@ -32,11 +32,16 @@ var _OperationResult = require('./OperationResult');
 
 var _OperationResult2 = _interopRequireDefault(_OperationResult);
 
+var _timers = require('timers');
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var defaultRetry = 10;
+var defaultWaitMillis = 1000;
 
 var Glassfish = function () {
     function Glassfish(url, user, password) {
@@ -58,6 +63,12 @@ var Glassfish = function () {
         key: '_fetch',
         value: function () {
             var _ref = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(url, opts) {
+                var _ref2 = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : { retry: defaultRetry, waitMillis: defaultWaitMillis },
+                    _ref2$retry = _ref2.retry,
+                    retry = _ref2$retry === undefined ? defaultRetry : _ref2$retry,
+                    _ref2$waitMillis = _ref2.waitMillis,
+                    waitMillis = _ref2$waitMillis === undefined ? defaultWaitMillis : _ref2$waitMillis;
+
                 var response;
                 return regeneratorRuntime.wrap(function _callee$(_context) {
                     while (1) {
@@ -75,19 +86,47 @@ var Glassfish = function () {
                                 }, opts.headers || {});
 
                                 _froqUtil.log.info('fetch ' + url + ' with ' + JSON.stringify(opts));
-                                _context.next = 5;
+                                response = void 0;
+                                _context.prev = 4;
+                                _context.next = 7;
                                 return (0, _nodeFetch2.default)(url, opts);
 
-                            case 5:
+                            case 7:
                                 response = _context.sent;
                                 return _context.abrupt('return', response);
 
-                            case 7:
+                            case 11:
+                                _context.prev = 11;
+                                _context.t0 = _context['catch'](4);
+
+                                if (!(retry <= 0)) {
+                                    _context.next = 15;
+                                    break;
+                                }
+
+                                throw _context.t0;
+
+                            case 15:
+
+                                _froqUtil.log.warning('could not fetch ' + url + ', will retry ' + retry + 'x in ' + waitMillis + 'ms');
+
+                            case 16:
+
+                                --retry;
+                                _context.next = 19;
+                                return new Promise(function (resolve, reject) {
+                                    (0, _timers.setTimeout)(resolve, waitMillis);
+                                });
+
+                            case 19:
+                                return _context.abrupt('return', this._fetch(url, opts, { retry: retry, waitMillis: waitMillis }));
+
+                            case 20:
                             case 'end':
                                 return _context.stop();
                         }
                     }
-                }, _callee, this);
+                }, _callee, this, [[4, 11]]);
             }));
 
             function _fetch(_x, _x2) {
@@ -99,8 +138,8 @@ var Glassfish = function () {
     }, {
         key: '_auth',
         value: function () {
-            var _ref2 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2() {
-                var response, json, gftoken;
+            var _ref3 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee2() {
+                var response, json, result, gftoken;
                 return regeneratorRuntime.wrap(function _callee2$(_context2) {
                     while (1) {
                         switch (_context2.prev = _context2.next) {
@@ -126,12 +165,22 @@ var Glassfish = function () {
 
                             case 7:
                                 json = _context2.sent;
+                                result = new _OperationResult2.default(json);
+
+                                if (result.isSuccess()) {
+                                    _context2.next = 11;
+                                    break;
+                                }
+
+                                throw result.asError();
+
+                            case 11:
                                 gftoken = json.extraProperties.token;
 
                                 _froqUtil.log.info('got token ' + gftoken);
                                 this._gftoken = gftoken;
 
-                            case 11:
+                            case 14:
                             case 'end':
                                 return _context2.stop();
                         }
@@ -140,7 +189,7 @@ var Glassfish = function () {
             }));
 
             function _auth() {
-                return _ref2.apply(this, arguments);
+                return _ref3.apply(this, arguments);
             }
 
             return _auth;
@@ -148,7 +197,7 @@ var Glassfish = function () {
     }, {
         key: 'logs',
         value: function () {
-            var _ref3 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3() {
+            var _ref4 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3() {
                 var response;
                 return regeneratorRuntime.wrap(function _callee3$(_context3) {
                     while (1) {
@@ -185,7 +234,7 @@ var Glassfish = function () {
             }));
 
             function logs() {
-                return _ref3.apply(this, arguments);
+                return _ref4.apply(this, arguments);
             }
 
             return logs;
@@ -193,7 +242,7 @@ var Glassfish = function () {
     }, {
         key: 'nextLogs',
         value: function () {
-            var _ref4 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4() {
+            var _ref5 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee4() {
                 var response;
                 return regeneratorRuntime.wrap(function _callee4$(_context4) {
                     while (1) {
@@ -242,7 +291,7 @@ var Glassfish = function () {
             }));
 
             function nextLogs() {
-                return _ref4.apply(this, arguments);
+                return _ref5.apply(this, arguments);
             }
 
             return nextLogs;
@@ -250,10 +299,10 @@ var Glassfish = function () {
     }, {
         key: 'deploy',
         value: function () {
-            var _ref5 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee5(filePath) {
-                var _ref6 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
-                    type = _ref6.type,
-                    contextRoot = _ref6.contextRoot;
+            var _ref6 = _asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee5(filePath) {
+                var _ref7 = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {},
+                    type = _ref7.type,
+                    contextRoot = _ref7.contextRoot;
 
                 var parse, id, formData, response;
                 return regeneratorRuntime.wrap(function _callee5$(_context5) {
@@ -315,8 +364,8 @@ var Glassfish = function () {
                 }, _callee5, this);
             }));
 
-            function deploy(_x3) {
-                return _ref5.apply(this, arguments);
+            function deploy(_x4) {
+                return _ref6.apply(this, arguments);
             }
 
             return deploy;

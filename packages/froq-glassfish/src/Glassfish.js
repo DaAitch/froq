@@ -5,6 +5,10 @@ import fs from 'fs';
 import { format } from 'url';
 import path from 'path';
 import OperationResult from './OperationResult';
+import { setTimeout } from 'timers';
+
+const defaultRetry = 10;
+const defaultWaitMillis = 1000;
 
 export default class Glassfish {
     constructor(url, user, password) {
@@ -19,7 +23,11 @@ export default class Glassfish {
         return this._url + path;
     }
 
-    async _fetch(url, opts) {
+    async _fetch(
+        url,
+        opts,
+        {retry = defaultRetry, waitMillis = defaultWaitMillis} = {retry: defaultRetry, waitMillis: defaultWaitMillis}
+    ) {
 
         opts = {...opts};
         opts.headers = {
@@ -34,9 +42,25 @@ export default class Glassfish {
         };
         
         log.info(`fetch ${url} with ${JSON.stringify(opts)}`);
-        const response = await fetch(url, opts);
+        let response;
+        try { 
+            response = await fetch(url, opts);
+            return response;
 
-        return response;
+        } catch (e) {
+            if (retry <= 0) {
+                throw e; // rethrow
+            }
+
+            log.warning(`could not fetch ${url}, will retry ${retry}x in ${waitMillis}ms`)
+        }
+
+        --retry;
+        await new Promise((resolve, reject) => {
+            setTimeout(resolve, waitMillis);
+        });
+
+        return this._fetch(url, opts, {retry, waitMillis});        
     }
 
     async _auth() {
@@ -48,9 +72,14 @@ export default class Glassfish {
             method: 'POST',
             body: JSON.stringify({})
         });
-
+        
         const json = await response.json();
-
+        const result = new OperationResult(json);
+        
+        if (!result.isSuccess()) {
+            throw result.asError();
+        }
+        
         const gftoken = json.extraProperties.token;
         log.info(`got token ${gftoken}`)
         this._gftoken = gftoken;

@@ -88,4 +88,8 @@ export default class OperationResult {
     get message() {
         return this._json.message;
     }
+
+    asError() {
+        return new Error(`exit_code: ${this.exitCode}, message: ${this.message}`);
+    }
 }
