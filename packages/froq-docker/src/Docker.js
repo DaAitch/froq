@@ -1,19 +1,16 @@
 import os from 'os';
-import util from 'util';
 import http from 'http';
+import {EventEmitter} from 'events';
 
-import request from 'request';
 import {log} from 'froq-util';
 import JSONStream from 'JSONStream';
 import {normalizeRepoTag} from './util';
-// import Container from './Container';
-import PullEvent from './PullEvent';
+import Container from './Container';
+import Image from './Image';
 
-const requestAsync = util.promisify(request);
-
-const json = string => {
+const json = arg => {
     try {
-        return JSON.parse(string);
+        return JSON.parse(arg);
     } catch (e) {
         return null;
     }
@@ -22,116 +19,164 @@ const json = string => {
 export default class Docker {
 
     static fromSocket (socketPath = undefined, https = false) {
-        
-        if (socketPath === undefined) {
-            if (os.type() !== 'Windows_NT') {
-                socketPath = 'unix:/var/run/docker.sock';
-            } else {
-                // something with: '//./pipe/docker_engine' ?
-                throw new Error('not implemented yet');
-            }
-        }
 
-        const protocol = https ? 'https' : 'http';
+        if (socketPath === undefined) {
+            socketPath = (os.type() === 'Windows_NT') ? '//./pipe/docker_engine' : '/var/run/docker.sock';
+        }
         
         log.info(`create docker from sock file: ${socketPath}`);
-        return new Docker(`${protocol}://${socketPath}:`);
+        return new Docker(socketPath, https);
     }
 
-    constructor (baseUrl) {
-        this._baseUrl = baseUrl;
+    constructor (socketPath, https) {
+        this._socketPath = socketPath;
+        this._https = https;
     }
 
-    async _request (path, options = {}) {
+    async _request ({
+        path,
+        method = 'GET',
+        body = undefined,
+        query = undefined,
+        stream = false
+    }) {
+        
+        let bodyBufferOrString;
+        const headers = {};
+        
+        if (body !== undefined) {
+            bodyBufferOrString = JSON.stringify(body);
+            headers['Content-Length'] = Buffer.byteLength(bodyBufferOrString);
+            headers['Content-Type'] = 'application/json';
+        }
+
+        let queryString = '';
+        if (query) {
+            queryString = Object.keys(query)
+                .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(query[key])}`)
+                .join('&')
+            ;
+        }
+
+        const pathAndQuery = `${path}?${queryString}`;
+
         const opts = {
-            ...options,
-            host: 'localhost',
-            headers: {
-                ...((options && options.headers) || {}),
-                host: 'localhost'
-            }
+            socketPath: this._socketPath,
+            path: pathAndQuery,
+            method,
+            headers,
         };
 
-        const requestUrl = this._baseUrl + path;
-        console.log(requestUrl, opts);
+        const req = http.request(opts, () => {});
 
-        // return await requestAsync(requestUrl, opts);
-        http.request({
-            socketPath: 
-        })
+        return await new Promise((resolve, reject) => {
+            req.on('error', reject);
+            req.on('response', res => {
+
+                if (res.statusCode >= 400 && res.statusCode <= 599) {
+                    reject(new Error(`${res.statusCode} ${res.statusMessage}: ${pathAndQuery}`));
+                    return;
+                }
+                
+                if (stream) {
+
+                    const ee = new EventEmitter();
+                    
+                    const parser = JSONStream.parse();
+                    let onData, onError, onEnd;
+
+                    const removeListener = () => {
+                        parser.removeListener('data', onData);
+                        parser.removeListener('error', onError);
+                        parser.removeListener('end', onEnd);
+                    };
+
+                    onData = event => {
+                        ee.emit('progress', event);
+                    };
+
+                    onError = e => {
+                        removeListener();
+                        ee.emit('error', e);
+                    };
+
+                    onEnd = () => {
+                        removeListener();
+                        ee.emit('end');
+                    };
+
+                    parser.on('data', onData);
+                    parser.on('error', onError);
+                    parser.on('end', onEnd);
+
+                    res.pipe(parser);
+
+                    return resolve(ee);
+                }
+
+                const chunks = [];
+
+                res.on('data', chunk => {
+                    chunks.push(chunk);
+                });
+            
+                res.on('end', () => {
+                    const buffer = Buffer.concat(chunks);
+                    const result = json(buffer);
+
+                    resolve(result);
+                });
+            });
+    
+            if (bodyBufferOrString) {
+                req.write(bodyBufferOrString);
+            }
+
+            req.end();
+        });
     }
 
     async getContainers () {
-        const res = await this._request('/containers/json');
-        return json(res.body);
+        return await this._request({
+            path: '/containers/json'
+        });
     }
 
     /**
-     * @param {string} repoTag
-     * @param {(event: PullEvent) => void} onProgress
+     * @return {Promise<Image>}
      */
-    async pull (repoTag, onProgress) {
-        const normalizedRepoTag = normalizeRepoTag(repoTag);
+    async pull ({fromImage, tag = undefined}, onProgress = undefined) {
 
+        const query = {
+            fromImage
+        };
 
-        const res = await this._request('/images/create', {
+        if (tag) {
+            query.tag = tag;
+        }
+
+        const res = await this._request({
+            path: '/images/create',
             method: 'POST',
-            json: true,
-            body: {
-                fromImage: normalizedRepoTag
-            }
+            query,
+            stream: true
         });
 
-        console.log(res.headers, res.statusCode, res.body);
+        if (onProgress) {
+            res.on('progress', onProgress);
+        }
+        
+        return await new Promise((resolve, reject) => {
+            res.on('error', reject);
+            res.on('end', () => {
+                let repoTag = fromImage;
+                if (tag) {
+                    repoTag += `:${tag}`;
+                }
 
-
-
-
-        // log.info(`pull ${repoTag} (${normalizedRepoTag})`);
-        // return new Promise((resolve, reject) => {
-        //     this._dockerode.pull(normalizedRepoTag, undefined, (err, outStream) => {
-        //         if (err) {
-        //             return reject(err);
-        //         }
-
-        //         const parser = JSONStream.parse();
-
-        //         let onData, onError, onEnd;
-
-        //         const removeListener = () => {
-        //             parser.removeListener('data', onData);
-        //             parser.removeListener('error', onError);
-        //             parser.removeListener('end', onEnd);
-        //         };
-
-        //         onData = event => {
-        //             if (event.error) {
-        //                 return onError(event.error);
-        //             }
-
-        //             if (onProgress) {
-        //                 onProgress(new PullEvent(event));
-        //             }
-        //         };
-
-        //         onError = e => {
-        //             removeListener();
-        //             reject(e);
-        //         };
-
-        //         onEnd = () => {
-        //             removeListener();
-        //             log.info(`pull finish ${repoTag}`);
-        //             resolve();
-        //         };
-
-        //         parser.on('data', onData);
-        //         parser.on('error', onError);
-        //         parser.on('end', onEnd);
-
-        //         outStream.pipe(parser);
-        //     });
-        // });
+                resolve(new Image(this, repoTag));
+            });
+        });
     }
 
     createContainer (repoTag) {
@@ -162,16 +207,23 @@ export default class Docker {
 
             build: async () => {
                 log.info(`build container ${repoTag}`);
-                const res = await this._request('/containers/create', {
+                const body = await this._request({
+                    path: '/containers/create',
                     method: 'POST',
-                    json: true,
-                    body: opts
+                    body: opts,
                 });
 
-                return res.body;
+                return new Container(this, body.Id);
             }
         };
 
         return builder;
+    }
+
+    async startContainer (containerId) {
+        return await this._request({
+            path: `/containers/${encodeURIComponent(containerId)}/start`,
+            method: 'POST'
+        });
     }
 }
