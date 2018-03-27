@@ -1,15 +1,15 @@
 import Dockerode from 'dockerode';
-import { log } from 'froq-util';
+import {log} from 'froq-util';
 import JSONStream from 'JSONStream';
 import os from 'os';
 
-import { normalizeRepoTag } from './util';
+import {normalizeRepoTag} from './util';
 import Container from './Container';
 import PullEvent from './PullEvent';
 
 export default class Docker {
 
-    static fromSocket(socketPath = undefined) {
+    static fromSocket (socketPath = undefined) {
         
         if (socketPath === undefined) {
             socketPath = (os.type() === 'Windows_NT') ? '//./pipe/docker_engine' : '/var/run/docker.sock';
@@ -20,19 +20,17 @@ export default class Docker {
     }
 
     /**
-     * 
-     * @param {Dockerode} dockerode 
+     * @param {Dockerode} dockerode
      */
-    constructor(dockerode) {
+    constructor (dockerode) {
         this._dockerode = dockerode;
     }
 
     /**
-     * 
-     * @param {string} repoTag 
-     * @param {(event: PullEvent) => void} onProgress 
+     * @param {string} repoTag
+     * @param {(event: PullEvent) => void} onProgress
      */
-    async pull(repoTag, onProgress) {
+    async pull (repoTag, onProgress) {
         const normalizedRepoTag = normalizeRepoTag(repoTag);
 
         log.info(`pull ${repoTag} (${normalizedRepoTag})`);
@@ -62,12 +60,12 @@ export default class Docker {
                     }
                 };
 
-                onError = err => {
+                onError = e => {
                     removeListener();
-                    reject(err);
+                    reject(e);
                 };
 
-                onEnd = event => {
+                onEnd = () => {
                     removeListener();
                     log.info(`pull finish ${repoTag}`);
                     resolve();
@@ -82,7 +80,7 @@ export default class Docker {
         });
     }
 
-    createContainer(repoTag) {
+    createContainer (repoTag) {
         const opts = {
             Image: normalizeRepoTag(repoTag)
         };

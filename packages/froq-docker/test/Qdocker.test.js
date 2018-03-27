@@ -1,4 +1,4 @@
-import { test } from 'ava';
+import {test} from 'ava';
 import Qdocker from '../src';
 
 test('should start docker and shutdown, cleanup', async t => {

@@ -1,4 +1,3 @@
-import Docker from 'dockerode';
 
 export const normalizeRepoTag = repoTag => {
     if (typeof repoTag === 'string' && repoTag.indexOf('/') === -1) {
