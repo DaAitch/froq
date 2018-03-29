@@ -1,11 +1,12 @@
 {
   "name": "froq-http",
-  "version": "0.0.3",
+  "version": "0.0.7",
   "description": "Integration Testing environment orchestration made easy for HTTP.",
   "main": "lib/index.js",
   "scripts": {
-    "build": "babel -s -d ./lib src",
-    "test": "NODE_TLS_REJECT_UNAUTHORIZED=0 ava test/*.test.js",
+    "build": "babel -d ./lib src",
+    "build:debug": "babel -s -d ./lib src",
+    "test": "NODE_TLS_REJECT_UNAUTHORIZED=0 ava test/*.test.js --verbose",
     "clean": "rm -rf lib"
   },
   "repository": {
@@ -21,7 +22,8 @@
   "author": "Philipp Renoth <renoth@wildoak.de>",
   "license": "MIT",
   "dependencies": {
-    "froq-util": "^0.0.3",
+    "debug": "^3.1.0",
+    "froq-util": "^0.0.7",
     "http": "0.0.0",
     "http-proxy": "^1.16.2",
     "mime-types": "^2.1.17"

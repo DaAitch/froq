@@ -3,18 +3,17 @@
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.parallel = exports.log = undefined;
-
-var _log = require('./log');
-
-var _log2 = _interopRequireDefault(_log);
+exports.retry = exports.parallel = undefined;
 
 var _parallel = require('./parallel');
 
 var _parallel2 = _interopRequireDefault(_parallel);
 
+var _retry = require('./retry');
+
+var _retry2 = _interopRequireDefault(_retry);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-exports.log = _log2.default;
 exports.parallel = _parallel2.default;
-//# sourceMappingURL=index.js.map
+exports.retry = _retry2.default;

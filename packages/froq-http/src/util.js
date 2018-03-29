@@ -1,7 +1,6 @@
-import { log } from 'froq-util';
-import { isJsonType, isTextType } from './mime';
+import {log} from 'froq-util';
+import {isJsonType, isTextType} from './mime';
 
-import httpProxy from 'http-proxy';
 import mime from 'mime-types';
 
 
@@ -11,11 +10,9 @@ export const resultByPlaceholders = (placeholders, result) => {
     const x = [...result];
 
     for (let i = 0; i < result.length; ++i) {
-        if (typeof placeholders[i] !== 'string' || placeholders[i] in x) {
-            continue;
+        if (typeof placeholders[i] === 'string' && !(placeholders[i] in x)) {
+            x[placeholders[i]] = result[i];
         }
-
-        x[placeholders[i]] = result[i];
     }
 
     return x;
@@ -34,8 +31,8 @@ export const mimes = {
     video: true
 };
 
-export const isMime = mime => {
-    if (!/^([^/]+)\//.test(mime)) {
+export const isMime = mime_ => {
+    if (!/^([^/]+)\//.test(mime_)) {
         return false;
     }
 
@@ -57,7 +54,7 @@ export const contentTypeLookupOrThrow = type => {
 
 export const transformRestTemplate = (strings, placeholders) => {
 
-    let method = undefined;
+    let method;
 
     if (strings.length >= 1 && /^(\s*(\S+)\s+)\//.test(strings[0])) {
         method = RegExp.$2;
@@ -95,6 +92,22 @@ export const respBodyForType = (type, body) => {
     return `>>> ${typeof body}: ${JSON.stringify(body)}`;
 };
 
+/**
+ * @param {string} type
+ * @param {Buffer} buffer
+ */
+export const reqBufferToBody = (type, buffer) => {
+    if (isJsonType(type)) {
+        return JSON.parse(buffer.toString());
+    }
+
+    if (isTextType(type)) {
+        return buffer.toString();
+    }
+
+    return buffer;
+};
+
 export const reqBodyForType = req => {
     return new Promise((resolve, reject) => {
         const chunks = [];
@@ -111,23 +124,6 @@ export const reqBodyForType = req => {
     });
 };
 
-/**
- * 
- * @param {string} type 
- * @param {Buffer} buffer 
- */
-export const reqBufferToBody = (type, buffer) => {
-    if (isJsonType(type)) {
-        return JSON.parse(buffer.toString());
-    }
-
-    if (isTextType(type)) {
-        return buffer.toString();
-    }
-
-    return buffer;
-};
-
 export const resp = ({body = null, type = 'json', status = 200}) => ({
     [qSymbol]: true,
     body,
@@ -136,18 +132,27 @@ export const resp = ({body = null, type = 'json', status = 200}) => ({
 });
 
 
-export const defaultCompareFn = (a, b) => (a < b) ? -1 : ((a > b) ? +1 : 0);
+export const defaultCompareFn = (a, b) => {
+    if (a < b) {
+        return -1;
+    }
+
+    if (a > b) {
+        return 1;
+    }
+
+    return 0;
+};
 
 export const routeCompareFn = (a, b) => {
     return defaultCompareFn(a.getPlaceholderCount(), b.getPlaceholderCount());
 };
 
 /**
- * 
- * @param {string} path 
- * @param {((path: string, index: number) => [number, number])[]} strings 
- * @param {((placeholder: string) => boolean)[]} placeholders 
- * @param {number} i 
+ * @param {string} path
+ * @param {((path: string, index: number) => [number, number])[]} strings
+ * @param {((placeholder: string) => boolean)[]} placeholders
+ * @param {number} i
  * @param {any[]} result
  */
 export const pathMatch = (path, strings, placeholders, i = 0, result = []) => {
@@ -174,7 +179,7 @@ export const pathMatch = (path, strings, placeholders, i = 0, result = []) => {
         r[i] = placeholder;
         
         const match = pathMatch(path.substr(found + length), strings, placeholders, i + 1, r);
-        if (false !== match) {
+        if (match !== false) {
             return match;
         }
     }
@@ -195,9 +200,8 @@ const placeholderToFn = expression => {
 };
 
 /**
- * 
- * @param {string[]} strings 
- * @param {any[]} placeholders 
+ * @param {string[]} strings
+ * @param {any[]} placeholders
  */
 export const createPathMatcherFromTemplate = (strings, ...placeholders) => {
 

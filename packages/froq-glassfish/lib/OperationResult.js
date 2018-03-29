@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
@@ -6,13 +6,9 @@ Object.defineProperty(exports, "__esModule", {
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _Command = require("./Command");
+var _Command = require('./Command');
 
 var _Command2 = _interopRequireDefault(_Command);
-
-var _Method = require("./Method");
-
-var _Method2 = _interopRequireDefault(_Method);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -26,7 +22,7 @@ var OperationResult = function () {
     }
 
     _createClass(OperationResult, [{
-        key: "isSuccess",
+        key: 'isSuccess',
         value: function isSuccess() {
             return this.exitCode === 'SUCCESS';
         }
@@ -39,12 +35,12 @@ var OperationResult = function () {
          */
 
     }, {
-        key: "asError",
+        key: 'asError',
         value: function asError() {
-            return new Error("exit_code: " + this.exitCode + ", message: " + this.message);
+            return new Error('exit_code: ' + this.exitCode + ', message: ' + this.message);
         }
     }, {
-        key: "command",
+        key: 'command',
         get: function get() {
             return this._json.command;
         }
@@ -55,7 +51,7 @@ var OperationResult = function () {
          */
 
     }, {
-        key: "exitCode",
+        key: 'exitCode',
         get: function get() {
             return this._json.exit_code;
         }
@@ -68,7 +64,7 @@ var OperationResult = function () {
          */
 
     }, {
-        key: "childResources",
+        key: 'childResources',
         get: function get() {
             return this._json.extraProperties && this._json.extraProperties.childResources;
         }
@@ -80,7 +76,7 @@ var OperationResult = function () {
          */
 
     }, {
-        key: "commandLog",
+        key: 'commandLog',
         get: function get() {
             return this._json.extraProperties && this._json.extraProperties.commandLog;
         }
@@ -93,7 +89,7 @@ var OperationResult = function () {
          */
 
     }, {
-        key: "commands",
+        key: 'commands',
         get: function get() {
             var commands = this._json.extraProperties && this._json.extraProperties.commands || [];
             return commands.map(function (command) {
@@ -108,34 +104,19 @@ var OperationResult = function () {
          */
 
     }, {
-        key: "entity",
+        key: 'entity',
         get: function get() {
             return this._json.extraProperties && this._json.extraProperties.entity;
         }
 
         /**
-         * A list of medatada sets of available CRUD methods
-         * that the target resource supports. This property
-         * is only available for the results of query operations.
-         */
-
-    }, {
-        key: "methods",
-        get: function get() {
-            var methods = this._json.extraProperties && this._json.extraProperties.methods || [];
-            return methods.map(function (method) {
-                return new _Method2.default(method);
-            });
-        }
-
-        /**
-         * Details the message the server sends in case of 
-         * encountering an error in executing the operation. 
+         * Details the message the server sends in case of
+         * encountering an error in executing the operation.
          * If no error was encountered, this property is empty.
          */
 
     }, {
-        key: "message",
+        key: 'message',
         get: function get() {
             return this._json.message;
         }
@@ -145,4 +126,3 @@ var OperationResult = function () {
 }();
 
 exports.default = OperationResult;
-//# sourceMappingURL=OperationResult.js.map

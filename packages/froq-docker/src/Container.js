@@ -1,54 +1,55 @@
-import {log} from 'froq-util';
-import Docker from './Docker';
 
 export default class Container {
     
     /**
-     * @param {Docker} docker 
-     * @param {any} body 
+     * @param {Docker} docker
+     * @param {string} id
      */
     constructor (docker, id) {
         this._docker = docker;
         this._id = id;
     }
 
-    async start () {
-        log.info('start container');
-        return await this._docker.startContainer(this._id);
+    get id () {
+        return this._id;
     }
 
-    // async stop () {
-    //     log.info('stop container');
-    //     const result = await this._container.stop();
-    //     log.info('stop container done');
-    //     return result;
-    // }
-       
-    // async remove () {
-    //     log.info('remove container');
-    //     const result = await this._container.remove();
-    //     log.info('remove container done');
-    //     return result;
-    // }
+    async start (detachKeys = undefined) {
+        return await this._docker.startContainer({
+            id: this._id,
+            detachKeys
+        });
+    }
+
+    async stop (t = undefined) {
+        return await this._docker.stopContainer({
+            id: this._id,
+            t
+        });
+    }
+
+    async wait (condition = undefined) {
+        return await this._docker.waitForContainer({
+            id: this._id,
+            condition
+        });
+    }
+
+    async remove ({force = undefined, link = undefined, v = undefined} = {}) {
+        return await this._docker.removeContainer({
+            id: this._id,
+            force,
+            link,
+            v
+        });
+    }
+
+    async inspect (size = undefined) {
+        return await this._docker.inspectContainer({
+            id: this._id,
+            size
+        });
+    }
+
     
-    // async inspect () {
-    //     log.info('inspect container');
-    //     const result = await this._container.inspect();
-    //     log.info('inspect container done');
-
-    //     return result;
-    // }
-
-    // getHostAddresses (port) {
-    //     return this._inspection.NetworkSettings.Ports[port].map(x => `${x.HostIp}:${x.HostPort}`); // IPv6?
-    // }
-
-    // getHostAddress (port) {
-    //     const addresses = this.getHostAddresses(port);
-    //     if (addresses.length === 0) {
-    //         return null;
-    //     }
-        
-    //     return addresses[0];
-    // }
 }

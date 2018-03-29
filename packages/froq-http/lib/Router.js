@@ -29,8 +29,8 @@ var Router = function () {
                     while (1) {
                         switch (_context2.prev = _context2.next) {
                             case 0:
-                                route = this.routes[lastRoute === undefined ? 0 : this.routes.findIndex(function (route) {
-                                    return route === lastRoute;
+                                route = this.routes[lastRoute === undefined ? 0 : this.routes.findIndex(function (route_) {
+                                    return route_ === lastRoute;
                                 }) + 1];
 
                                 if (route) {
@@ -87,4 +87,3 @@ var Router = function () {
 }();
 
 exports.default = Router;
-//# sourceMappingURL=Router.js.map

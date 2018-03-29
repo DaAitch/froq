@@ -1,15 +1,13 @@
-import { log } from 'froq-util';
-
-
+import debug from './debug';
 
 export default class Route {
 
-    constructor() {
+    constructor () {
         this.matcher = null;
         this.processer = null;
     }
 
-    async handle(req, resp, next) {
+    async handle (req, resp, next) {
         const result = this.matcher(req);
         
         if (result === false) {
@@ -19,7 +17,7 @@ export default class Route {
 
         const procResult = this.processor(req, resp, result);
         await Promise.resolve(procResult);
-        log.info(`route processed`);
+        debug('route processed');
 
         if (!resp.finished) {
             resp.end();
@@ -27,7 +25,7 @@ export default class Route {
         
     }
 
-    get placeholderCount() {
+    get placeholderCount () {
         return this.matcher.placeholderCount;
     }
 }

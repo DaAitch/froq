@@ -1,1 +1,0 @@
-{"version":3,"sources":["../src/Command.js"],"names":["Command"],"mappings":";;;;;;;;IAAqBA,O;;;;kBAAAA,O","file":"Command.js","sourcesContent":["export default class Command {\n\n}"]}

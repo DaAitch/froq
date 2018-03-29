@@ -8,15 +8,13 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _froqUtil = require('froq-util');
-
 var _httpProxy = require('http-proxy');
 
 var _httpProxy2 = _interopRequireDefault(_httpProxy);
 
-var _Route = require('./Route');
+var _debug = require('./debug');
 
-var _Route2 = _interopRequireDefault(_Route);
+var _debug2 = _interopRequireDefault(_debug);
 
 var _util = require('./util');
 
@@ -29,8 +27,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var Rest = function () {
 
     /**
-     * 
-     * @param {Route} route 
+     * @param {Route} route
      */
     function Rest(_ref) {
         var route = _ref.route,
@@ -99,7 +96,7 @@ var Rest = function () {
 
                                 case 13:
                                     isQResponse = (typeof innerRespondParam === 'undefined' ? 'undefined' : _typeof(innerRespondParam)) === 'object' && _util.qSymbol in innerRespondParam;
-                                    type = undefined;
+                                    type = void 0;
 
 
                                     if (isQResponse) {
@@ -108,7 +105,7 @@ var Rest = function () {
                                         }
 
                                         if ('type' in innerRespondParam) {
-                                            _froqUtil.log.debug('using type ' + innerRespondParam.type + ' from response type');
+                                            (0, _debug2.default)('using type %s from response type', innerRespondParam.type);
                                             type = (0, _util.contentTypeLookupOrThrow)(innerRespondParam.type);
                                             resp.setHeader('content-type', type);
                                         }
@@ -124,17 +121,17 @@ var Rest = function () {
 
                                     if (!type) {
                                         if (_this._type !== undefined) {
-                                            _froqUtil.log.debug('using type ' + _this._type + ' from rest type');
+                                            (0, _debug2.default)('using type %s from rest type', _this._type);
                                             type = _this._type;
                                         } else if (_this._server.type !== undefined) {
-                                            _froqUtil.log.debug('using type ' + _this._server._type + ' from server type');
+                                            (0, _debug2.default)('using type %s from server type', _this._server._type);
                                             type = _this._server._type;
                                         }
 
                                         if (type) {
                                             resp.setHeader('content-type', type);
                                         } else {
-                                            _froqUtil.log.error('unknown type!');
+                                            (0, _debug2.default)('unknown type');
                                         }
                                     }
 
@@ -164,10 +161,8 @@ var Rest = function () {
         value: function proxy(expr) {
             var _this2 = this;
 
-            var name = expr;
             var target = expr;
             if (typeof expr !== 'string') {
-                name = expr.name;
                 target = 'http://' + expr.address;
             }
 
@@ -177,9 +172,9 @@ var Rest = function () {
                 changeOrigin: true
             });
 
-            this._route.processor = function (req, resp, result) {
+            this._route.processor = function (req, resp) {
                 return new Promise(function (resolve, reject) {
-                    _froqUtil.log.info('using proxy: ' + req.method + ' ' + req.url + ' -> ' + _this2._server._name + '(' + target + ')');
+                    (0, _debug2.default)('using proxy: %s %s -> %s(%s)', req.method, req.url, _this2._server._name, target);
                     proxy.web(req, resp);
 
                     resp.on('finish', resolve).on('error', reject);
@@ -196,4 +191,3 @@ var Rest = function () {
 }();
 
 exports.default = Rest;
-//# sourceMappingURL=Rest.js.map

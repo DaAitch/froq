@@ -1,12 +1,14 @@
 import os from 'os';
 import http from 'http';
+import {Readable} from 'stream';
 import {EventEmitter} from 'events';
 
-import {log} from 'froq-util';
 import JSONStream from 'JSONStream';
-import {normalizeRepoTag} from './util';
-import Container from './Container';
+
+import debug from './debug';
 import Image from './Image';
+import Container from './Container';
+import Inspection from './Inspection';
 
 const json = arg => {
     try {
@@ -14,6 +16,38 @@ const json = arg => {
     } catch (e) {
         return null;
     }
+};
+
+const stringstream = stringOrBuffer => {
+    const stream = new Readable();
+    stream.push(stringOrBuffer);
+    stream.push(null);
+
+    return stream;
+};
+
+const pick = obj => {
+    const result = {};
+
+    for (const k in obj) {
+        const value = obj[k];
+        if (value !== undefined) {
+            result[k] = value;
+        }
+    }
+
+    return result;
+};
+
+const promisifyResponseStream = async (res, onProgress = undefined) => {
+    if (onProgress) {
+        res.on('progress', onProgress);
+    }
+
+    return await new Promise((resolve, reject) => {
+        res.on('error', reject);
+        res.on('end', resolve);
+    });
 };
 
 export default class Docker {
@@ -24,7 +58,7 @@ export default class Docker {
             socketPath = (os.type() === 'Windows_NT') ? '//./pipe/docker_engine' : '/var/run/docker.sock';
         }
         
-        log.info(`create docker from sock file: ${socketPath}`);
+        debug('create docker from sock file: %s', socketPath);
         return new Docker(socketPath, https);
     }
 
@@ -35,19 +69,22 @@ export default class Docker {
 
     async _request ({
         path,
-        method = 'GET',
-        body = undefined,
+        method,
         query = undefined,
-        stream = false
+        bodyStream = undefined,
+        bodyContentLength = undefined,
+        bodyContentType = undefined,
+        responseStream = false
     }) {
         
-        let bodyBufferOrString;
         const headers = {};
-        
-        if (body !== undefined) {
-            bodyBufferOrString = JSON.stringify(body);
-            headers['Content-Length'] = Buffer.byteLength(bodyBufferOrString);
-            headers['Content-Type'] = 'application/json';
+
+        if (bodyContentLength !== undefined) {
+            headers['Content-Length'] = bodyContentLength;
+        }
+
+        if (bodyContentType) {
+            headers['Content-Type'] = bodyContentType;
         }
 
         let queryString = '';
@@ -78,7 +115,7 @@ export default class Docker {
                     return;
                 }
                 
-                if (stream) {
+                if (responseStream) {
 
                     const ee = new EventEmitter();
                     
@@ -128,24 +165,33 @@ export default class Docker {
                 });
             });
     
-            if (bodyBufferOrString) {
-                req.write(bodyBufferOrString);
-            }
+            if (bodyStream) {
 
-            req.end();
+                // auto end
+                bodyStream.pipe(req);
+            } else {
+
+                req.end();
+            }
         });
     }
 
-    async getContainers () {
-        return await this._request({
-            path: '/containers/json'
-        });
+    async listContainers () {
+        debug('list containers');
+        return await this._request({method: 'GET', path: '/containers/json'});
+    }
+
+    async listImages () {
+        debug('list images');
+        return await this._request({method: 'GET', path: '/images/json'});
     }
 
     /**
      * @return {Promise<Image>}
      */
     async pull ({fromImage, tag = undefined}, onProgress = undefined) {
+
+        debug('pull image: %o', {fromImage, tag});
 
         const query = {
             fromImage
@@ -156,74 +202,133 @@ export default class Docker {
         }
 
         const res = await this._request({
-            path: '/images/create',
             method: 'POST',
+            path: '/images/create',
             query,
-            stream: true
+            responseStream: true
         });
 
-        if (onProgress) {
-            res.on('progress', onProgress);
-        }
-        
-        return await new Promise((resolve, reject) => {
-            res.on('error', reject);
-            res.on('end', () => {
-                let repoTag = fromImage;
-                if (tag) {
-                    repoTag += `:${tag}`;
-                }
+        await promisifyResponseStream(res, event => {
+            debug('pull event: %o', event);
 
-                resolve(new Image(this, repoTag));
-            });
-        });
-    }
-
-    createContainer (repoTag) {
-        const opts = {
-            Image: normalizeRepoTag(repoTag)
-        };
-
-        const builder = {
-            bind: (port, hostPort = '', hostIp = undefined) => {
-                opts.PortBindings = opts.PortBindings || {};
-                opts.PortBindings[port] = opts.PortBindings[port] || [];
-
-                const binding = {
-                    HostPort: hostPort
-                };
-                if (hostIp !== undefined) {
-                    binding.HostIp = hostIp;
-                }
-                opts.PortBindings[port].push(binding);
-
-                return builder;
-            },
-            env: (envVar, value) => {
-                opts.Env = opts.Env || [];
-                opts.Env.push(`${envVar}=${value}`);
-                return builder;
-            },
-
-            build: async () => {
-                log.info(`build container ${repoTag}`);
-                const body = await this._request({
-                    path: '/containers/create',
-                    method: 'POST',
-                    body: opts,
-                });
-
-                return new Container(this, body.Id);
+            if (onProgress) {
+                onProgress(event);
             }
-        };
+        });
 
-        return builder;
+        let repoTag = fromImage;
+        if (tag) {
+            repoTag += `:${tag}`;
+        }
+
+        return new Image(this, repoTag);
     }
 
-    async startContainer (containerId) {
+    async createContainer ({data, name = undefined}) {
+
+        debug('create container %O', {data, name});
+
+        const dataString = JSON.stringify(data);
+
+        const body = await this._request({
+            method: 'POST',
+            path: '/containers/create',
+            query: pick({name}),
+            bodyStream: stringstream(dataString),
+            bodyContentLength: Buffer.byteLength(dataString),
+            bodyContentType: 'application/json'
+        });
+
+        const containerId = body && body.Id;
+        return new Container(this, containerId);
+    }
+
+    async startContainer ({id, detachKeys = undefined}) {
+        debug('start container: %o', {id, detachKeys});
+
         return await this._request({
-            path: `/containers/${encodeURIComponent(containerId)}/start`,
-            method: 'POST'
+            method: 'POST',
+            path: `/containers/${encodeURIComponent(id)}/start`,
+            query: pick({detachKeys})
+        });
+    }
+
+    async stopContainer ({id, t = undefined}) {
+        debug('stop container: %o', {id, t});
+
+        return await this._request({
+            method: 'POST',
+            path: `/containers/${encodeURIComponent(id)}/stop`,
+            query: pick({t})
+        });
+    }
+
+    async removeContainer ({id, v = undefined, force = undefined, link = undefined}) {
+        debug('remove container: %o', {id, v, force, link});
+
+        return await this._request({
+            method: 'DELETE',
+            path: `/containers/${encodeURIComponent(id)}`,
+            query: pick({v, force, link})
+        });
+    }
+
+    async inspectContainer ({id, size = undefined}) {
+        debug('inspect container: %o', {id, size});
+
+        const data = await this._request({
+            method: 'GET',
+            path: `/containers/${encodeURIComponent(id)}/json`,
+            query: pick({size})
+        });
+
+        return new Inspection(this, data);
+    }
+
+    async waitForContainer ({id, condition = undefined}) {
+        debug('wait for container: %o', {id, condition});
+        
+        return await this._request({
+            method: 'POST',
+            path: `/containers/${encodeURIComponent(id)}/wait`,
+            query: pick({condition})
+        });
+    }
+
+    async build ({dockerfile = undefined, t, bodyStream, bodyContentType, bodyContentLength}, onProgress = undefined) {
+        debug('build image: %o', {dockerfile, t, bodyContentLength, bodyContentType});
+
+        const res = await this._request({
+            method: 'POST',
+            path: '/build',
+            query: pick({
+                dockerfile,
+                t
+            }),
+            bodyStream,
+            bodyContentLength,
+            bodyContentType,
+            responseStream: true
+        });
+
+        await promisifyResponseStream(res, event => {
+            debug('build event: %o', event);
+
+            if (onProgress) {
+                onProgress(event);
+            }
+        });
+
+        return new Image(this, t);
+    }
+
+    async removeImage ({name, force = undefined, noprune = undefined}) {
+        debug('remove image: %o', {name, force, noprune});
+        
+        await this._request({
+            method: 'DELETE',
+            path: `/images/${encodeURIComponent(name)}`,
+            query: pick({force, noprune})
         });
     }
 }

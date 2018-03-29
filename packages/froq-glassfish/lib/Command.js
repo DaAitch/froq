@@ -11,4 +11,3 @@ var Command = function Command() {
 };
 
 exports.default = Command;
-//# sourceMappingURL=Command.js.map

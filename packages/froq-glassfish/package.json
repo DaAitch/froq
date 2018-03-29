@@ -1,11 +1,12 @@
 {
   "name": "froq-glassfish",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Integration Testing environment orchestration made easy for Glassfish.",
   "main": "lib/index.js",
   "scripts": {
-    "build": "babel -s -d ./lib src",
-    "test": "NODE_TLS_REJECT_UNAUTHORIZED=0 ava test/*.test.js",
+    "build": "babel -d ./lib src",
+    "build:debug": "babel -s -d ./lib src",
+    "test": "NODE_TLS_REJECT_UNAUTHORIZED=0 ava test/*.test.js --verbose",
     "clean": "rm -rf lib"
   },
   "repository": {
@@ -22,8 +23,9 @@
   "license": "MIT",
   "dependencies": {
     "JSONStream": "^1.3.2",
+    "debug": "^3.1.0",
     "form-data": "^2.3.1",
-    "froq-util": "^0.0.3",
+    "froq-util": "^0.0.7",
     "node-fetch": "^1.7.3"
   },
   "devDependencies": {
@@ -35,7 +37,7 @@
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-es2017": "^6.24.1",
     "babel-register": "^6.26.0",
-    "froq-docker": "0.0.3",
+    "froq-docker": "^0.0.7",
     "maven": "^4.3.0"
   },
   "ava": {

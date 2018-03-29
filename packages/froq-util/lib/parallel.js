@@ -21,4 +21,3 @@ exports.default = function () {
         return arg;
     }));
 };
-//# sourceMappingURL=parallel.js.map

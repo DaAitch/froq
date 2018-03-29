@@ -10,7 +10,9 @@ var _http = require('http');
 
 var _http2 = _interopRequireDefault(_http);
 
-var _froqUtil = require('froq-util');
+var _debug = require('./debug');
+
+var _debug2 = _interopRequireDefault(_debug);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -21,8 +23,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 var Server = function () {
 
     /**
-     * 
-     * @param {string} name 
+     * @param {string} name
      */
     function Server() {
         var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 'server';
@@ -43,9 +44,8 @@ var Server = function () {
 
 
         /**
-         * 
-         * @param {number?} port 
-         * @param {string?} address 
+         * @param {number?} port
+         * @param {string?} address
          */
         value: function start() {
             var _this = this;
@@ -53,32 +53,33 @@ var Server = function () {
             var port = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : undefined;
             var address = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : undefined;
 
-            return new Promise(function (resolve, reject) {
+            return new Promise(function (resolve) {
 
                 _this._server = _http2.default.createServer(function (req, resp) {
-                    _froqUtil.log.info(req.method + ' ' + req.url);
+
+                    (0, _debug2.default)('request %s %s', req.method, req.url);
 
                     if (_this._handler) {
                         _this._handler(req, resp, _this._nextHandler(req, resp)).then(function () {
-                            _froqUtil.log.info(_this._name + ' request ' + req.url + ' processed.');
+                            (0, _debug2.default)('%s request %s processed', _this._name, req.url);
                         }).catch(function (e) {
-                            _froqUtil.log.error(_this._name + ' request ' + req.url + ' error: ' + e.stack);
+                            (0, _debug2.default)('%s request %s error %O', _this._name, req.url, e.stack);
                             _this._errorHandler(req, resp, e);
                         });
-                        ;
                     }
                 });
 
                 _this._server.listen(port, address, function () {
-                    _froqUtil.log.info(_this._name + ' port ' + _this.address.port + ' bound.');
+                    (0, _debug2.default)('%s port %d bound', _this._name, _this.address.port);
                     resolve();
                 });
 
                 _this._server.addListener('connection', function (socket) {
-                    _froqUtil.log.debug(_this._name + ' new connection.');
+                    (0, _debug2.default)('%s new connection', _this._name);
+
                     _this._sockets.push(socket);
                     socket.addListener('close', function () {
-                        _froqUtil.log.debug(_this._name + ' connection close.');
+                        (0, _debug2.default)('%s connection closed', _this._name);
                         _this._sockets = _this._sockets.filter(function (sock) {
                             return sock !== socket;
                         });
@@ -96,8 +97,9 @@ var Server = function () {
         value: function stop() {
             var _this2 = this;
 
-            _froqUtil.log.info(this._name + ' close');
-            return new Promise(function (resolve, reject) {
+            (0, _debug2.default)('%s close', this._name);
+
+            return new Promise(function (resolve) {
                 _this2._server.close(function () {
                     _this2._sockets.forEach(function (socket) {
                         return socket.end();
@@ -110,8 +112,7 @@ var Server = function () {
         }
 
         /**
-         * 
-         * @param {(req, resp, next) => void} handler 
+         * @param {(req, resp, next) => void} handler
          */
 
     }, {
@@ -129,7 +130,7 @@ var Server = function () {
                     while (1) {
                         switch (_context.prev = _context.next) {
                             case 0:
-                                _froqUtil.log.error('could not find a suited endpoint: ' + req.method + ' ' + req.url);
+                                (0, _debug2.default)('could not find a suited endpoint: %s %s', req.method, req.url);
 
                                 resp.statusCode = 404;
                                 resp.end();
@@ -165,4 +166,3 @@ var Server = function () {
 }();
 
 exports.default = Server;
-//# sourceMappingURL=Connection.js.map

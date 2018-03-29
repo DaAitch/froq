@@ -1,14 +1,14 @@
-import { log } from 'froq-util';
 import Router from './Router';
 import Route from './Route';
 import Connection from './Connection';
 import Rest from './Rest';
 
+import debug from './debug';
 
-import { transformRestTemplate, createPathMatcherFromTemplate, contentTypeLookupOrThrow } from './util';
+import {transformRestTemplate, createPathMatcherFromTemplate, contentTypeLookupOrThrow} from './util';
 
 export default class Server {
-    constructor(name, port) {
+    constructor (name, port) {
         this._name = name;
         this._port = port;
 
@@ -18,40 +18,43 @@ export default class Server {
         this._connection.setHandler((req, resp, next) => this._router.handle(req, resp, next));
     }
 
-    async start() {
+    async start () {
         await this._connection.start(this._port);
     }
 
-    async stop() {
+    async stop () {
         await this._connection.stop();
     }
 
-    get name() {
+    get name () {
         return this._name;
     }
 
-    get address() {
+    get address () {
         const address = this._connection.address;
-            switch (address.family) {
-                case 'IPv4': {
-                    return `${this._connection.address.address}:${this._connection.address.port}`;
-                }
-                case 'IPv6': {
-                    return `[${this._connection.address.address}]:${this._connection.address.port}`;
-                }
+        switch (address.family) {
+            case 'IPv4': {
+                return `${this._connection.address.address}:${this._connection.address.port}`;
             }
+            case 'IPv6': {
+                return `[${this._connection.address.address}]:${this._connection.address.port}`;
+            }
+            default: {
+                return undefined;
+            }
+        }
     }
 
-    url(path = '') {
+    url (path = '') {
         return `http://${this.address}${path}`;
     }
 
-    type(type) {
+    type (type) {
         this._type = contentTypeLookupOrThrow(type);
         return this;
     }
 
-    rest(strings, ...placeholders) {
+    rest (strings, ...placeholders) {
 
         let method;
         [method, strings, placeholders] = transformRestTemplate(strings, placeholders);
@@ -65,7 +68,7 @@ export default class Server {
             }
 
             const result = matcher(req.url);
-            log.debug(`${this._name}: ${req.url} ${result !== false ? 'matches' : 'not matches'} ${strings.join('...')}`);
+            debug('%s: %s %s %s', this._name, req.url, result !== false ? 'matches' : 'not matches', strings.join('...'));
 
             return result;
         };
@@ -74,8 +77,6 @@ export default class Server {
             throw new Error(`processor missing for ${strings.join('...')}.`);
         };
         
-        const router = this._router;
-        const server = this;
-        return new Rest({route, router, placeholders, server});
+        return new Rest({route, router: this._router, placeholders, server: this});
     }
 }

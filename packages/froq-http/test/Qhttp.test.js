@@ -1,13 +1,13 @@
-import { test } from 'ava';
+import {test} from 'ava';
 import fetch from 'node-fetch';
-import Qhttp from '../src';
+import http from '../src';
 
 // Tue Dec 12 2017 00:00:00 GMT+0100
-const Q_NULL = 1513033200000;
-const Q_NULL_DATE = new Date(Q_NULL);
+// const Q_NULL = 1513033200000;
+// const Q_NULL_DATE = new Date(Q_NULL);
 
 test('should do simple request', async t => {
-    const server = await Qhttp();
+    const server = await http();
     
     server
         .rest `/news`
@@ -15,7 +15,7 @@ test('should do simple request', async t => {
         .respond({test: true})
     ;
 
-    const result = await fetch(`http://${server.address}/news`);
+    const result = await fetch(server.url('/news'));
     const json = await result.json();
     t.deepEqual(json, {test: true});
     
@@ -23,14 +23,14 @@ test('should do simple request', async t => {
 });
 
 test('should do templated request', async t => {
-    const server = await Qhttp();
+    const server = await http();
     
     server
         .rest `/news/${'id'}`
         .respond(({result}) => {
             t.is(result[0], '12345');
             t.is(result.id, '12345');
-            return Qhttp.resp({
+            return http.resp({
                 type: 'json',
                 body: result[0]
             });
@@ -45,7 +45,7 @@ test('should do templated request', async t => {
 });
 
 test('should proxy', async t => {
-    const [server1, server2] = await Promise.all([Qhttp('server1'), Qhttp('server2')]);
+    const [server1, server2] = await Promise.all([http('server1'), http('server2')]);
 
     server2
         .rest `/api/docs`
@@ -64,7 +64,6 @@ test('should proxy', async t => {
         .proxy(server2)
     ;
 
-    
 
     {
         const result = await fetch(server1.url('/index.html'));
@@ -75,18 +74,18 @@ test('should proxy', async t => {
     {
         const result = await fetch(server1.url('/api/docs'));
         const json = await result.json();
-        t.deepEqual(json, ['doc1', 'doc2'])
+        t.deepEqual(json, ['doc1', 'doc2']);
     }
     
     await Promise.all([server1.stop(), server2.stop()]);
 });
 
 test('should return error', async t => {
-    const server = await Qhttp();
+    const server = await http();
 
     server
         .rest `/api/error`
-        .respond(() => Qhttp.resp({
+        .respond(() => http.resp({
             status: 404,
             type: 'json',
             body: 'Not Found'
@@ -101,7 +100,7 @@ test('should return error', async t => {
 });
 
 test('should respond to body', async t => {
-    const server = await Qhttp();
+    const server = await http();
 
     server
         .rest `/api/endpoint`
@@ -132,7 +131,7 @@ test('should respond to body', async t => {
 });
 
 test('should understand server type, route type, response type', async t => {
-    const server = await Qhttp();
+    const server = await http();
 
     server
         .type('json')
@@ -147,7 +146,7 @@ test('should understand server type, route type, response type', async t => {
         .respond('<p>Html</p>')
 
         .rest `/api/txt`
-        .respond(Qhttp.resp({type: 'txt', body: 'This is a text.'}))
+        .respond(http.resp({type: 'txt', body: 'This is a text.'}))
     ;
 
     {
@@ -173,7 +172,7 @@ test('should understand server type, route type, response type', async t => {
 });
 
 test('should throw illegal type', async t => {
-    const server = await Qhttp();
+    const server = await http();
     t.throws(() => server.type('xxx'));
 
     t.throws(() => {
@@ -186,7 +185,7 @@ test('should throw illegal type', async t => {
     
     server
         .rest `/api2`
-        .respond(() => Qhttp.resp({
+        .respond(() => http.resp({
             type: 'xxx'
         }))
     ;
@@ -198,7 +197,7 @@ test('should throw illegal type', async t => {
 });
 
 test('should not add erroneous routes', async t => {
-    const server = await Qhttp();
+    const server = await http();
 
     server
         .rest `/api`
@@ -211,7 +210,7 @@ test('should not add erroneous routes', async t => {
 });
 
 test('should', async t => {
-    const server = await Qhttp();
+    const server = await http();
 
     server
         .rest `/login`
@@ -223,7 +222,7 @@ test('should', async t => {
                 };
             }
 
-            return Qhttp.resp({
+            return http.resp({
                 status: 401,
                 body: {
                     login: false
@@ -267,7 +266,6 @@ test('should', async t => {
 });
 
 
-
 // test.only('should', async t => {
 //     const server = await Qhttp();
 
@@ -307,7 +305,7 @@ test('should', async t => {
 //     await server.stop();
 // });
 
-// Set-Cookie: <cookie-name>=<cookie-value> 
+// Set-Cookie: <cookie-name>=<cookie-value>
 // Set-Cookie: <cookie-name>=<cookie-value>; Expires=<date>
 // Set-Cookie: <cookie-name>=<cookie-value>; Max-Age=<non-zero-digit>
 // Set-Cookie: <cookie-name>=<cookie-value>; Domain=<domain-value>

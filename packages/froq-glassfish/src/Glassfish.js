@@ -1,17 +1,15 @@
-import fetch from 'node-fetch';
-import { log } from 'froq-util';
-import FormData from 'form-data';
 import fs from 'fs';
-import { format } from 'url';
 import path from 'path';
-import OperationResult from './OperationResult';
-import { setTimeout } from 'timers';
+import fetch from 'node-fetch';
+import FormData from 'form-data';
+import {retry} from 'froq-util';
 
-const defaultRetry = 10;
-const defaultWaitMillis = 1000;
+import debug from './debug';
+import OperationResult from './OperationResult';
+
 
 export default class Glassfish {
-    constructor(url, user, password) {
+    constructor (url, user, password) {
         this._url = url;
         this._user = user;
         this._password = password;
@@ -19,15 +17,11 @@ export default class Glassfish {
         this._textAppendNextUrl = undefined;
     }
 
-    _restUrl(path) {
-        return this._url + path;
+    _restUrl (path_) {
+        return this._url + path_;
     }
 
-    async _fetch(
-        url,
-        opts,
-        {retry = defaultRetry, waitMillis = defaultWaitMillis} = {retry: defaultRetry, waitMillis: defaultWaitMillis}
-    ) {
+    async _fetch (url, opts) {
 
         opts = {...opts};
         opts.headers = {
@@ -41,29 +35,11 @@ export default class Glassfish {
             ...(opts.headers || {})
         };
         
-        log.info(`fetch ${url} with ${JSON.stringify(opts)}`);
-        let response;
-        try { 
-            response = await fetch(url, opts);
-            return response;
-
-        } catch (e) {
-            if (retry <= 0) {
-                throw e; // rethrow
-            }
-
-            log.warning(`could not fetch ${url}, will retry ${retry}x in ${waitMillis}ms`)
-        }
-
-        --retry;
-        await new Promise((resolve, reject) => {
-            setTimeout(resolve, waitMillis);
-        });
-
-        return this._fetch(url, opts, {retry, waitMillis});        
+        debug('fetch url %s with opts %o', url, opts);
+        return await retry({try: () => fetch(url, opts), defer: 500});
     }
 
-    async _auth() {
+    async _auth () {
         if (this._gftoken) {
             return;
         }
@@ -81,11 +57,12 @@ export default class Glassfish {
         }
         
         const gftoken = json.extraProperties.token;
-        log.info(`got token ${gftoken}`)
+        debug('got token %s', gftoken);
+
         this._gftoken = gftoken;
     }
 
-    async logs() {
+    async logs () {
         await this._auth();
 
         const response = await this._fetch(this._restUrl('/management/domain/view-log'), {
@@ -98,7 +75,7 @@ export default class Glassfish {
         return await response.text();
     }
 
-    async nextLogs() {
+    async nextLogs () {
         await this._auth();
 
         if (!this._textAppendNextUrl) {
@@ -116,10 +93,9 @@ export default class Glassfish {
         return await response.text();
     }
 
-    async deploy(filePath, {type, contextRoot} = {}) {
+    async deploy (filePath, {type, contextRoot} = {}) {
         await this._auth();
 
-        
 
         const parse = path.parse(filePath);
 
@@ -139,7 +115,7 @@ export default class Glassfish {
         const formData = new FormData();
         formData.append('id', fs.createReadStream(filePath));
         formData.append('type', type);
-        formData.append('contextroot', contextRoot)
+        formData.append('contextroot', contextRoot);
         
         
         const response = await this._fetch(this._restUrl('/management/domain/applications/deploy.json'), {
