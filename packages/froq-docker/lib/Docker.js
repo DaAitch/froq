@@ -108,7 +108,6 @@ class Docker {
         method,
         query = undefined,
         bodyStream = undefined,
-        bodyContentLength = undefined,
         bodyContentType = undefined,
         responseStream = false
     }) {
@@ -117,10 +116,6 @@ class Docker {
         return _asyncToGenerator(function* () {
 
             const headers = {};
-
-            if (bodyContentLength !== undefined) {
-                headers['Content-Length'] = bodyContentLength;
-            }
 
             if (bodyContentType) {
                 headers['Content-Type'] = bodyContentType;
@@ -289,7 +284,6 @@ class Docker {
                 path: '/containers/create',
                 query: pick({ name }),
                 bodyStream: stringstream(dataString),
-                bodyContentLength: Buffer.byteLength(dataString),
                 bodyContentType: 'application/json'
             });
 
@@ -370,11 +364,11 @@ class Docker {
         })();
     }
 
-    build({ dockerfile = undefined, t, bodyStream, bodyContentType, bodyContentLength }, onProgress = undefined) {
+    build({ dockerfile = undefined, t, bodyStream, bodyContentType }, onProgress = undefined) {
         var _this11 = this;
 
         return _asyncToGenerator(function* () {
-            (0, _debug2.default)('build image: %o', { dockerfile, t, bodyContentLength, bodyContentType });
+            (0, _debug2.default)('build image: %o', { dockerfile, t, bodyContentType });
 
             const res = yield _this11._request({
                 method: 'POST',
@@ -384,7 +378,6 @@ class Docker {
                     t
                 }),
                 bodyStream,
-                bodyContentLength,
                 bodyContentType,
                 responseStream: true
             });

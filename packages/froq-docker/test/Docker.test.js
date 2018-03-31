@@ -1,16 +1,10 @@
-import fs from 'fs';
-import path from 'path';
-import util from 'util';
+import {BuildStream} from 'froq-docker-util';
 
 import {test} from 'ava';
 import fetch from 'node-fetch';
 import {retry} from 'froq-util';
 
 import {Docker} from '../src';
-
-const stat = util.promisify(fs.stat);
-
-const samplesPath = path.join(__dirname, 'samples');
 
 test.beforeEach(async t => {
     t.context.docker = Docker.fromSocket();
@@ -58,17 +52,23 @@ test('should build image from tar, fetch homepage, clean up', async t => {
 
     const imageName = 'froqdockerimage' + Date.now();
 
-    const buildTar = path.join(samplesPath, 'build.tar.gz');
-    const stats = await stat(buildTar);
+    const bs = new BuildStream();
 
-    const bodyStream = fs.createReadStream(buildTar);
-
-    const image = await t.context.docker.build({
-        t: imageName,
-        bodyStream,
-        bodyContentLength: stats.size,
-        bodyContentType: 'application/x-gzip'
-    });
+    const [image] = await Promise.all([
+        t.context.docker.build({
+            t: imageName,
+            bodyStream: bs.stream,
+            bodyContentType: bs.contentType
+        }),
+        (async () => {
+            await bs.addFileAsBuffer('Dockerfile', `
+FROM httpd
+COPY index.html /usr/local/apache2/htdocs/index.html
+`);
+            await bs.addFileAsBuffer('index.html', 'test_index');
+            bs.end();
+        })()
+    ]);
 
     
     const container = await image.createContainer({
@@ -92,7 +92,7 @@ test('should build image from tar, fetch homepage, clean up', async t => {
     const res = await retry({try: () => fetch(`http://${address}`)});
     const text = await res.text();
 
-    // from index.html of build.tar.gz
+    // from index.html
     t.is(text, 'test_index');
 
     await container.stop();
