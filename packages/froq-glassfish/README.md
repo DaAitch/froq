@@ -2,7 +2,7 @@
 
 ![Travis branch](https://img.shields.io/travis/DaAitch/froq/master.png?style=flat-square)
 ![Stability](https://img.shields.io/badge/Stability-experimental-orange.png?style=flat-square)
-![Looking for Contributers](https://img.shields.io/badge/Looking%20for-Contributers-green.png?style=flat-square)
+![Looking for Contributors](https://img.shields.io/badge/Looking%20for-Contributors-green.png?style=flat-square)
 
 ![npm](https://img.shields.io/npm/v/froq-glassfish.png?style=flat-square)
 ![node](https://img.shields.io/node/v/froq-glassfish.png?style=flat-square)
