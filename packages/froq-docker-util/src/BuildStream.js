@@ -16,6 +16,8 @@ export default class BuildStream {
         this._pack = tar.pack();
         this._gzip = gzip;
 
+        this._writing = false;
+
         this._stream = this._pack;
         if (gzip) {
             this._stream = this._pack.pipe(zlib.createGzip());
@@ -30,11 +32,27 @@ export default class BuildStream {
         return this._gzip ? 'application/tar+gzip' : 'application/tar';
     }
 
+    _setWriting () {
+        if (this._writing) {
+            throw new Error('already writing');
+        }
+
+        this._writing = true;
+    }
+
+    _resetWriting () {
+        this._writing = false;
+    }
+
     async addFileAsBuffer (name, stringOrBuffer) {
+        this._setWriting();
+
         debug('add buffer at `%s`', name);
 
         return new Promise((resolve, reject) => {
             this._pack.entry({name}, stringOrBuffer, err => {
+                this._resetWriting();
+
                 if (err) {
                     reject(err);
                     return;
@@ -46,10 +64,14 @@ export default class BuildStream {
     }
 
     async addFileAsStream (name, size, streamCb) {
+        this._setWriting();
+
         debug('add stream at `%s` with size %d', name, size);
 
         return new Promise((resolve, reject) => {
             const stream = this._pack.entry({name, size}, err => {
+                this._resetWriting();
+                
                 if (err) {
                     reject(err);
                     return;

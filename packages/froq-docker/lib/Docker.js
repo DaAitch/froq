@@ -144,7 +144,17 @@ class Docker {
                 req.on('response', function (res) {
 
                     if (res.statusCode >= 400 && res.statusCode <= 599) {
-                        reject(new Error(`${res.statusCode} ${res.statusMessage}: ${pathAndQuery}`));
+                        const chunks = [];
+
+                        res.on('data', function (chunk) {
+                            chunks.push(chunk);
+                        });
+
+                        res.on('end', function () {
+                            const errorResult = Buffer.concat(chunks).toString();
+                            reject(new Error(`${res.statusCode} ${res.statusMessage}: ${pathAndQuery}\n\n${errorResult}`));
+                        });
+
                         return;
                     }
 

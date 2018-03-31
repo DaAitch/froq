@@ -205,3 +205,16 @@ test('should add folder', async t => {
         'src/file2.txt': 'content of file2.txt'
     });
 });
+
+test('should throw if adding while writing', async t => {
+    const bs = new BuildStream();
+
+    bs.addFileAsStream('file1.txt', 4, stream => {
+        process.nextTick(() => {
+            stream.write('test');
+            stream.end();
+        });
+    });
+
+    await t.throws(bs.addFileAsBuffer('file2.txt', 'should fail'));
+});
