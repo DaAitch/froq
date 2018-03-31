@@ -4,12 +4,8 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-exports.default = function () {
-    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
-        args[_key] = arguments[_key];
-    }
-
-    return Promise.all(args.map(function (arg) {
+exports.default = (...args) => {
+    return Promise.all(args.map(arg => {
         if (arg instanceof Function) {
             arg = arg();
         }

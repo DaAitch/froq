@@ -5,10 +5,6 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.createPathMatcherFromTemplate = exports.pathMatch = exports.routeCompareFn = exports.defaultCompareFn = exports.resp = exports.reqBodyForType = exports.reqBufferToBody = exports.respBodyForType = exports.transformRestTemplate = exports.contentTypeLookupOrThrow = exports.isMime = exports.mimes = exports.resultByPlaceholders = exports.qSymbol = undefined;
 
-var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
-
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
 var _froqUtil = require('froq-util');
 
 var _mime = require('./mime');
@@ -19,16 +15,12 @@ var _mimeTypes2 = _interopRequireDefault(_mimeTypes);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+const qSymbol = exports.qSymbol = Symbol('Q');
 
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+const resultByPlaceholders = exports.resultByPlaceholders = (placeholders, result) => {
+    const x = [...result];
 
-var qSymbol = exports.qSymbol = Symbol('Q');
-
-var resultByPlaceholders = exports.resultByPlaceholders = function resultByPlaceholders(placeholders, result) {
-    var x = [].concat(_toConsumableArray(result));
-
-    for (var i = 0; i < result.length; ++i) {
+    for (let i = 0; i < result.length; ++i) {
         if (typeof placeholders[i] === 'string' && !(placeholders[i] in x)) {
             x[placeholders[i]] = result[i];
         }
@@ -37,7 +29,7 @@ var resultByPlaceholders = exports.resultByPlaceholders = function resultByPlace
     return x;
 };
 
-var mimes = exports.mimes = {
+const mimes = exports.mimes = {
     application: true,
     audio: true,
     example: true,
@@ -49,7 +41,7 @@ var mimes = exports.mimes = {
     video: true
 };
 
-var isMime = exports.isMime = function isMime(mime_) {
+const isMime = exports.isMime = mime_ => {
     if (!/^([^/]+)\//.test(mime_)) {
         return false;
     }
@@ -57,33 +49,33 @@ var isMime = exports.isMime = function isMime(mime_) {
     return RegExp.$1 in mimes;
 };
 
-var contentTypeLookupOrThrow = exports.contentTypeLookupOrThrow = function contentTypeLookupOrThrow(type) {
+const contentTypeLookupOrThrow = exports.contentTypeLookupOrThrow = type => {
     if (isMime(type)) {
         return type;
     }
 
-    var contentType = _mimeTypes2.default.lookup(type);
+    const contentType = _mimeTypes2.default.lookup(type);
     if (contentType !== false) {
         return contentType;
     }
 
-    throw new TypeError('unknown type: ' + type);
+    throw new TypeError(`unknown type: ${type}`);
 };
 
-var transformRestTemplate = exports.transformRestTemplate = function transformRestTemplate(strings, placeholders) {
+const transformRestTemplate = exports.transformRestTemplate = (strings, placeholders) => {
 
-    var method = void 0;
+    let method;
 
     if (strings.length >= 1 && /^(\s*(\S+)\s+)\//.test(strings[0])) {
         method = RegExp.$2;
-        strings = [].concat(_toConsumableArray(strings));
+        strings = [...strings];
         strings[0] = strings[0].substring(RegExp.$1.length);
     }
 
     return [method, strings, placeholders];
 };
 
-var respBodyForType = exports.respBodyForType = function respBodyForType(type, body) {
+const respBodyForType = exports.respBodyForType = (type, body) => {
 
     if (Buffer.isBuffer(body)) {
         return body;
@@ -97,20 +89,20 @@ var respBodyForType = exports.respBodyForType = function respBodyForType(type, b
         return body;
     }
 
-    _froqUtil.log.warning('cannot transform body for type ' + type);
+    _froqUtil.log.warning(`cannot transform body for type ${type}`);
     if (typeof body === 'string') {
         return body;
     }
 
     // any string representation
-    return '>>> ' + (typeof body === 'undefined' ? 'undefined' : _typeof(body)) + ': ' + JSON.stringify(body);
+    return `>>> ${typeof body}: ${JSON.stringify(body)}`;
 };
 
 /**
  * @param {string} type
  * @param {Buffer} buffer
  */
-var reqBufferToBody = exports.reqBufferToBody = function reqBufferToBody(type, buffer) {
+const reqBufferToBody = exports.reqBufferToBody = (type, buffer) => {
     if ((0, _mime.isJsonType)(type)) {
         return JSON.parse(buffer.toString());
     }
@@ -122,31 +114,26 @@ var reqBufferToBody = exports.reqBufferToBody = function reqBufferToBody(type, b
     return buffer;
 };
 
-var reqBodyForType = exports.reqBodyForType = function reqBodyForType(req) {
-    return new Promise(function (resolve, reject) {
-        var chunks = [];
-        req.on('data', function (chunk) {
+const reqBodyForType = exports.reqBodyForType = req => {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        req.on('data', chunk => {
             chunks.push(chunk);
-        }).on('end', function () {
-            var buffer = Buffer.concat(chunks);
+        }).on('end', () => {
+            const buffer = Buffer.concat(chunks);
             resolve(reqBufferToBody(req.headers['content-type'], buffer));
         }).on('error', reject);
     });
 };
 
-var resp = exports.resp = function resp(_ref) {
-    var _ref2;
+const resp = exports.resp = ({ body = null, type = 'json', status = 200 }) => ({
+    [qSymbol]: true,
+    body,
+    type,
+    status
+});
 
-    var _ref$body = _ref.body,
-        body = _ref$body === undefined ? null : _ref$body,
-        _ref$type = _ref.type,
-        type = _ref$type === undefined ? 'json' : _ref$type,
-        _ref$status = _ref.status,
-        status = _ref$status === undefined ? 200 : _ref$status;
-    return _ref2 = {}, _defineProperty(_ref2, qSymbol, true), _defineProperty(_ref2, 'body', body), _defineProperty(_ref2, 'type', type), _defineProperty(_ref2, 'status', status), _ref2;
-};
-
-var defaultCompareFn = exports.defaultCompareFn = function defaultCompareFn(a, b) {
+const defaultCompareFn = exports.defaultCompareFn = (a, b) => {
     if (a < b) {
         return -1;
     }
@@ -158,7 +145,7 @@ var defaultCompareFn = exports.defaultCompareFn = function defaultCompareFn(a, b
     return 0;
 };
 
-var routeCompareFn = exports.routeCompareFn = function routeCompareFn(a, b) {
+const routeCompareFn = exports.routeCompareFn = (a, b) => {
     return defaultCompareFn(a.getPlaceholderCount(), b.getPlaceholderCount());
 };
 
@@ -169,82 +156,60 @@ var routeCompareFn = exports.routeCompareFn = function routeCompareFn(a, b) {
  * @param {number} i
  * @param {any[]} result
  */
-var pathMatch = exports.pathMatch = function pathMatch(path, strings, placeholders) {
-    var i = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
-    var result = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : [];
-
+const pathMatch = exports.pathMatch = (path, strings, placeholders, i = 0, result = []) => {
 
     if (i >= placeholders.length) {
         return result;
     }
 
-    var found = path.length + 1;
-    var length = -1;
+    let found = path.length + 1;
+    let length = -1;
 
     for (;;) {
-        var _strings$i = strings[i](path, found - 1);
-
-        var _strings$i2 = _slicedToArray(_strings$i, 2);
-
-        found = _strings$i2[0];
-        length = _strings$i2[1];
-
+        [found, length] = strings[i](path, found - 1);
         if (found < 0) {
             return false;
         }
 
-        var placeholder = path.substr(0, found);
+        const placeholder = path.substr(0, found);
         if (!placeholders[i](placeholder)) {
             continue;
         }
 
-        var r = [].concat(_toConsumableArray(result));
+        const r = [...result];
         r[i] = placeholder;
 
-        var match = pathMatch(path.substr(found + length), strings, placeholders, i + 1, r);
+        const match = pathMatch(path.substr(found + length), strings, placeholders, i + 1, r);
         if (match !== false) {
             return match;
         }
     }
 };
 
-var stringToFn = function stringToFn(find) {
-    return function (string, position) {
-        return [string.lastIndexOf(find, position), find.length];
-    };
-};
-var placeholderToFn = function placeholderToFn(expression) {
+const stringToFn = find => (string, position) => [string.lastIndexOf(find, position), find.length];
+const placeholderToFn = expression => {
     if (typeof expression === 'string') {
-        return function () {
-            return true;
-        };
+        return () => true;
     } else if (expression instanceof RegExp) {
-        return function (placeholder) {
-            return expression.test(placeholder);
-        };
+        return placeholder => expression.test(placeholder);
     } else if (expression instanceof Function) {
         return expression;
     }
 
-    throw new TypeError('unknown placeholder: ' + expression);
+    throw new TypeError(`unknown placeholder: ${expression}`);
 };
 
 /**
  * @param {string[]} strings
  * @param {any[]} placeholders
  */
-var createPathMatcherFromTemplate = exports.createPathMatcherFromTemplate = function createPathMatcherFromTemplate(strings) {
-    for (var _len = arguments.length, placeholders = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-        placeholders[_key - 1] = arguments[_key];
-    }
+const createPathMatcherFromTemplate = exports.createPathMatcherFromTemplate = (strings, ...placeholders) => {
 
     strings = strings.map(stringToFn);
-    placeholders = [function (x) {
-        return x === '';
-    }].concat(_toConsumableArray(placeholders.map(placeholderToFn)));
+    placeholders = [x => x === '', ...placeholders.map(placeholderToFn)];
 
-    var fn = function fn(path) {
-        var result = pathMatch(path, strings, placeholders);
+    const fn = path => {
+        const result = pathMatch(path, strings, placeholders);
         if (result === false) {
             return result;
         }
