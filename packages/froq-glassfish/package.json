@@ -1,6 +1,6 @@
 {
   "name": "froq-glassfish",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Integration Testing environment orchestration made easy for Glassfish.",
   "main": "lib/index.js",
   "scripts": {
@@ -35,7 +35,7 @@
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "babel-register": "^6.26.0",
-    "froq-docker": "^0.0.8",
+    "froq-docker": "^0.0.9",
     "maven": "^4.3.0"
   },
   "ava": {

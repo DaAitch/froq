@@ -1,6 +1,6 @@
 {
   "name": "froq-docker-util",
-  "version": "0.0.1",
+  "version": "0.0.9",
   "main": "lib/index.js",
   "scripts": {
     "build": "babel -d ./lib src",
