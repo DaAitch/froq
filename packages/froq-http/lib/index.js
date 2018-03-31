@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+exports.Server = undefined;
 
 var _Server = require('./Server');
 
@@ -46,4 +47,4 @@ var http = function () {
 http.resp = _util.resp;
 
 exports.default = http;
-//# sourceMappingURL=index.js.map
+exports.Server = _Server2.default;

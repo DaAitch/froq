@@ -1,12 +1,11 @@
-import Command from "./Command";
-import Method from "./Method";
+import Command from './Command';
 
 export default class OperationResult {
-    constructor(json) {
+    constructor (json) {
         this._json = json;
     }
 
-    isSuccess() {
+    isSuccess () {
         return this.exitCode === 'SUCCESS';
     }
 
@@ -16,7 +15,7 @@ export default class OperationResult {
      * or the name of the method or command executed (in
      * case of a failed operation).
      */
-    get command() {
+    get command () {
         return this._json.command;
     }
 
@@ -24,7 +23,7 @@ export default class OperationResult {
      * The result of the operation’s execution, either
      * SUCCESS or FAILURE.
      */
-    get exitCode() {
+    get exitCode () {
         return this._json.exit_code;
     }
 
@@ -34,7 +33,7 @@ export default class OperationResult {
      * of the resource`s name and it`s URL. This property is
      * only available for the results of query operations.
      */
-    get childResources() {
+    get childResources () {
         return this._json.extraProperties
             && this._json.extraProperties.childResources;
     }
@@ -44,7 +43,7 @@ export default class OperationResult {
      * on the server. This property is only available for the
      * results of add, update or delete operations.
      */
-    get commandLog() {
+    get commandLog () {
         return this._json.extraProperties
         && this._json.extraProperties.commandLog;
     }
@@ -55,7 +54,7 @@ export default class OperationResult {
      * on the target resource. This property is only available
      * for the results of query operations.
      */
-    get commands() {
+    get commands () {
         const commands = (this._json.extraProperties && this._json.extraProperties.commands) || [];
         return commands.map(command => new Command(command));
     }
@@ -65,31 +64,21 @@ export default class OperationResult {
      * Each property of the resource is configured as a
      * key-value pair of the object itself.
      */
-    get entity() {
+    get entity () {
         return this._json.extraProperties
         && this._json.extraProperties.entity;
     }
 
     /**
-     * A list of medatada sets of available CRUD methods
-     * that the target resource supports. This property
-     * is only available for the results of query operations.
-     */
-    get methods() {
-        const methods = (this._json.extraProperties && this._json.extraProperties.methods) || [];
-        return methods.map(method => new Method(method));
-    }
-
-    /**
-     * Details the message the server sends in case of 
-     * encountering an error in executing the operation. 
+     * Details the message the server sends in case of
+     * encountering an error in executing the operation.
      * If no error was encountered, this property is empty.
      */
-    get message() {
+    get message () {
         return this._json.message;
     }
 
-    asError() {
+    asError () {
         return new Error(`exit_code: ${this.exitCode}, message: ${this.message}`);
     }
 }

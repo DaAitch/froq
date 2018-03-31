@@ -3,6 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
+exports.Docker = undefined;
 
 var _Docker = require('./Docker');
 
@@ -10,9 +11,4 @@ var _Docker2 = _interopRequireDefault(_Docker);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-exports.default = {
-    fromSocket: function fromSocket(socketFile) {
-        return _Docker2.default.fromSocket(socketFile);
-    }
-};
-//# sourceMappingURL=index.js.map
+exports.Docker = _Docker2.default;

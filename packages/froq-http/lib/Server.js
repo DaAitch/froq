@@ -8,8 +8,6 @@ var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = [
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _froqUtil = require('froq-util');
-
 var _Router = require('./Router');
 
 var _Router2 = _interopRequireDefault(_Router);
@@ -25,6 +23,10 @@ var _Connection2 = _interopRequireDefault(_Connection);
 var _Rest = require('./Rest');
 
 var _Rest2 = _interopRequireDefault(_Rest);
+
+var _debug = require('./debug');
+
+var _debug2 = _interopRequireDefault(_debug);
 
 var _util = require('./util');
 
@@ -145,7 +147,7 @@ var Server = function () {
                 }
 
                 var result = matcher(req.url);
-                _froqUtil.log.debug(_this2._name + ': ' + req.url + ' ' + (result !== false ? 'matches' : 'not matches') + ' ' + strings.join('...'));
+                (0, _debug2.default)('%s: %s %s %s', _this2._name, req.url, result !== false ? 'matches' : 'not matches', strings.join('...'));
 
                 return result;
             };
@@ -154,9 +156,7 @@ var Server = function () {
                 throw new Error('processor missing for ' + strings.join('...') + '.');
             };
 
-            var router = this._router;
-            var server = this;
-            return new _Rest2.default({ route: route, router: router, placeholders: placeholders, server: server });
+            return new _Rest2.default({ route: route, router: this._router, placeholders: placeholders, server: this });
         }
     }, {
         key: 'name',
@@ -176,6 +176,10 @@ var Server = function () {
                     {
                         return '[' + this._connection.address.address + ']:' + this._connection.address.port;
                     }
+                default:
+                    {
+                        return undefined;
+                    }
             }
         }
     }]);
@@ -184,4 +188,3 @@ var Server = function () {
 }();
 
 exports.default = Server;
-//# sourceMappingURL=Server.js.map

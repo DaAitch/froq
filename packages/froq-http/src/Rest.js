@@ -1,27 +1,25 @@
-import { log } from 'froq-util';
 import httpProxy from 'http-proxy';
-import Route from './Route';
-import { contentTypeLookupOrThrow, resultByPlaceholders, qSymbol, respBodyForType, reqBodyForType } from './util';
+import debug from './debug';
+import {contentTypeLookupOrThrow, resultByPlaceholders, qSymbol, respBodyForType, reqBodyForType} from './util';
 
 export default class Rest {
 
     /**
-     * 
-     * @param {Route} route 
+     * @param {Route} route
      */
-    constructor({route, router, placeholders, server}) {
+    constructor ({route, router, placeholders, server}) {
         this._route = route;
         this._router = router;
         this._placeholders = placeholders;
         this._server = server;
     }
 
-    type(type) {
+    type (type) {
         this._type = contentTypeLookupOrThrow(type);
         return this;
     }
 
-    respond(respondParam) {
+    respond (respondParam) {
         
         this._router.add(this._route);
         this._route.processor = async (req, resp, result) => {
@@ -44,7 +42,7 @@ export default class Rest {
     
             const isQResponse = typeof innerRespondParam === 'object' && qSymbol in innerRespondParam;
     
-            let type = undefined;
+            let type;
         
             if (isQResponse) {
                 if ('status' in innerRespondParam) {
@@ -52,7 +50,7 @@ export default class Rest {
                 }
         
                 if ('type' in innerRespondParam) {
-                    log.debug(`using type ${innerRespondParam.type} from response type`);
+                    debug('using type %s from response type', innerRespondParam.type);
                     type = contentTypeLookupOrThrow(innerRespondParam.type);
                     resp.setHeader('content-type', type);
                 }
@@ -68,17 +66,17 @@ export default class Rest {
             
             if (!type) {
                 if (this._type !== undefined) {
-                    log.debug(`using type ${this._type} from rest type`);
+                    debug('using type %s from rest type', this._type);
                     type = this._type;
                 } else if (this._server.type !== undefined) {
-                    log.debug(`using type ${this._server._type} from server type`);
+                    debug('using type %s from server type', this._server._type);
                     type = this._server._type;
                 }
     
                 if (type) {
                     resp.setHeader('content-type', type);
                 } else {
-                    log.error(`unknown type!`);
+                    debug('unknown type');
                 }
                 
             }
@@ -94,12 +92,10 @@ export default class Rest {
         return this._server;
     }
 
-    proxy(expr) {
+    proxy (expr) {
 
-        let name = expr;
         let target = expr;
         if (typeof expr !== 'string') {
-            name = expr.name;
             target = `http://${expr.address}`;
         }
     
@@ -109,9 +105,9 @@ export default class Rest {
             changeOrigin: true
         });
     
-        this._route.processor = (req, resp, result) => {
+        this._route.processor = (req, resp) => {
             return new Promise((resolve, reject) => {
-                log.info(`using proxy: ${req.method} ${req.url} -> ${this._server._name}(${target})`);
+                debug('using proxy: %s %s -> %s(%s)', req.method, req.url, this._server._name, target);
                 proxy.web(req, resp);
     
                 resp

@@ -2,11 +2,9 @@
 
 <img src="froq.png" width="100" alt="froQ logo" />
 
-Stage is very early alpha. Feel free to try **froQ**, but be aware: at current we are experimental.
-
 ## Currently we support
 
-- HTTP (http servers, ReST endpoints)
-- Docker (pull images, start containers, etc.)
-- Glassfish (view logs, deploy artifacts)
+- HTTP [npm](https://www.npmjs.com/package/froq-http) [GitHub](https://github.com/DaAitch/froq/tree/master/packages/froq-http) (http servers, ReST endpoints)
+- Docker [npm](https://www.npmjs.com/package/froq-docker) [GitHub](https://github.com/DaAitch/froq/tree/master/packages/froq-docker) (pull images, start containers, etc.)
+- Glassfish [npm](https://www.npmjs.com/package/froq-glassfish) [GitHub](https://github.com/DaAitch/froq/tree/master/packages/froq-glassfish) (view logs, deploy artifacts)
 - more to come

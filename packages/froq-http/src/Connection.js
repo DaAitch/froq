@@ -1,13 +1,13 @@
 import http from 'http';
-import { log } from 'froq-util';
+
+import debug from './debug';
 
 export default class Server {
 
     /**
-     * 
-     * @param {string} name 
+     * @param {string} name
      */
-    constructor(name = 'server') {
+    constructor (name = 'server') {
         this._name = name;
         this._sockets = [];
     }
@@ -15,44 +15,45 @@ export default class Server {
     /**
      * @returns {string}
      */
-    get name() {
+    get name () {
         return this._name;
     }
 
     /**
-     * 
-     * @param {number?} port 
-     * @param {string?} address 
+     * @param {number?} port
+     * @param {string?} address
      */
-    start(port = undefined, address = undefined) {
-        return new Promise((resolve, reject) => {
+    start (port = undefined, address = undefined) {
+        return new Promise(resolve => {
 
             this._server = http.createServer((req, resp) => {
-                log.info(`${req.method} ${req.url}`);
+
+                debug('request %s %s', req.method, req.url);
 
                 if (this._handler) {
                     this._handler(req, resp, this._nextHandler(req, resp))
                         .then(() => {
-                            log.info(`${this._name} request ${req.url} processed.`);
+                            debug('%s request %s processed', this._name, req.url);
                         })
                         .catch(e => {
-                            log.error(`${this._name} request ${req.url} error: ${e.stack}`);
+                            debug('%s request %s error %O', this._name, req.url, e.stack);
                             this._errorHandler(req, resp, e);
-                        });
+                        })
                     ;
                 }
             });
 
             this._server.listen(port, address, () => {
-                log.info(`${this._name} port ${this.address.port} bound.`);
+                debug('%s port %d bound', this._name, this.address.port);
                 resolve();
             });
 
             this._server.addListener('connection', socket => {
-                log.debug(`${this._name} new connection.`);
+                debug('%s new connection', this._name);
+
                 this._sockets.push(socket);
                 socket.addListener('close', () => {
-                    log.debug(`${this._name} connection close.`);
+                    debug('%s connection closed', this._name);
                     this._sockets = this._sockets.filter(sock => sock !== socket);
                 });
             });
@@ -62,13 +63,14 @@ export default class Server {
     /**
      * @returns {string}
      */
-    get address() {
+    get address () {
         return this._server.address();
     }
 
-    stop() {
-        log.info(`${this._name} close`);
-        return new Promise((resolve, reject) => {
+    stop () {
+        debug('%s close', this._name);
+        
+        return new Promise(resolve => {
             this._server.close(() => {
                 this._sockets.forEach(socket => socket.end());
                 this._sockets = [];
@@ -79,23 +81,22 @@ export default class Server {
     }
 
     /**
-     * 
-     * @param {(req, resp, next) => void} handler 
+     * @param {(req, resp, next) => void} handler
      */
-    setHandler(handler) {
+    setHandler (handler) {
         this._handler = handler;
     }
 
-    _nextHandler(req, resp) {
+    _nextHandler (req, resp) {
         return async () => {
-            log.error(`could not find a suited endpoint: ${req.method} ${req.url}`);
+            debug('could not find a suited endpoint: %s %s', req.method, req.url);
 
             resp.statusCode = 404;
             resp.end();
         };
     }
 
-    _errorHandler(req, resp, e) {
+    _errorHandler (req, resp, e) {
         resp.statusCode = 500;
         resp.write(e.stack);
         resp.end();

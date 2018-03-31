@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.createPathMatcherFromTemplate = exports.pathMatch = exports.routeCompareFn = exports.defaultCompareFn = exports.resp = exports.reqBufferToBody = exports.reqBodyForType = exports.respBodyForType = exports.transformRestTemplate = exports.contentTypeLookupOrThrow = exports.isMime = exports.mimes = exports.resultByPlaceholders = exports.qSymbol = undefined;
+exports.createPathMatcherFromTemplate = exports.pathMatch = exports.routeCompareFn = exports.defaultCompareFn = exports.resp = exports.reqBodyForType = exports.reqBufferToBody = exports.respBodyForType = exports.transformRestTemplate = exports.contentTypeLookupOrThrow = exports.isMime = exports.mimes = exports.resultByPlaceholders = exports.qSymbol = undefined;
 
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
@@ -12,10 +12,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 var _froqUtil = require('froq-util');
 
 var _mime = require('./mime');
-
-var _httpProxy = require('http-proxy');
-
-var _httpProxy2 = _interopRequireDefault(_httpProxy);
 
 var _mimeTypes = require('mime-types');
 
@@ -33,11 +29,9 @@ var resultByPlaceholders = exports.resultByPlaceholders = function resultByPlace
     var x = [].concat(_toConsumableArray(result));
 
     for (var i = 0; i < result.length; ++i) {
-        if (typeof placeholders[i] !== 'string' || placeholders[i] in x) {
-            continue;
+        if (typeof placeholders[i] === 'string' && !(placeholders[i] in x)) {
+            x[placeholders[i]] = result[i];
         }
-
-        x[placeholders[i]] = result[i];
     }
 
     return x;
@@ -55,8 +49,8 @@ var mimes = exports.mimes = {
     video: true
 };
 
-var isMime = exports.isMime = function isMime(mime) {
-    if (!/^([^/]+)\//.test(mime)) {
+var isMime = exports.isMime = function isMime(mime_) {
+    if (!/^([^/]+)\//.test(mime_)) {
         return false;
     }
 
@@ -78,7 +72,7 @@ var contentTypeLookupOrThrow = exports.contentTypeLookupOrThrow = function conte
 
 var transformRestTemplate = exports.transformRestTemplate = function transformRestTemplate(strings, placeholders) {
 
-    var method = undefined;
+    var method = void 0;
 
     if (strings.length >= 1 && /^(\s*(\S+)\s+)\//.test(strings[0])) {
         method = RegExp.$2;
@@ -112,22 +106,9 @@ var respBodyForType = exports.respBodyForType = function respBodyForType(type, b
     return '>>> ' + (typeof body === 'undefined' ? 'undefined' : _typeof(body)) + ': ' + JSON.stringify(body);
 };
 
-var reqBodyForType = exports.reqBodyForType = function reqBodyForType(req) {
-    return new Promise(function (resolve, reject) {
-        var chunks = [];
-        req.on('data', function (chunk) {
-            chunks.push(chunk);
-        }).on('end', function () {
-            var buffer = Buffer.concat(chunks);
-            resolve(reqBufferToBody(req.headers['content-type'], buffer));
-        }).on('error', reject);
-    });
-};
-
 /**
- * 
- * @param {string} type 
- * @param {Buffer} buffer 
+ * @param {string} type
+ * @param {Buffer} buffer
  */
 var reqBufferToBody = exports.reqBufferToBody = function reqBufferToBody(type, buffer) {
     if ((0, _mime.isJsonType)(type)) {
@@ -139,6 +120,18 @@ var reqBufferToBody = exports.reqBufferToBody = function reqBufferToBody(type, b
     }
 
     return buffer;
+};
+
+var reqBodyForType = exports.reqBodyForType = function reqBodyForType(req) {
+    return new Promise(function (resolve, reject) {
+        var chunks = [];
+        req.on('data', function (chunk) {
+            chunks.push(chunk);
+        }).on('end', function () {
+            var buffer = Buffer.concat(chunks);
+            resolve(reqBufferToBody(req.headers['content-type'], buffer));
+        }).on('error', reject);
+    });
 };
 
 var resp = exports.resp = function resp(_ref) {
@@ -154,7 +147,15 @@ var resp = exports.resp = function resp(_ref) {
 };
 
 var defaultCompareFn = exports.defaultCompareFn = function defaultCompareFn(a, b) {
-    return a < b ? -1 : a > b ? +1 : 0;
+    if (a < b) {
+        return -1;
+    }
+
+    if (a > b) {
+        return 1;
+    }
+
+    return 0;
 };
 
 var routeCompareFn = exports.routeCompareFn = function routeCompareFn(a, b) {
@@ -162,11 +163,10 @@ var routeCompareFn = exports.routeCompareFn = function routeCompareFn(a, b) {
 };
 
 /**
- * 
- * @param {string} path 
- * @param {((path: string, index: number) => [number, number])[]} strings 
- * @param {((placeholder: string) => boolean)[]} placeholders 
- * @param {number} i 
+ * @param {string} path
+ * @param {((path: string, index: number) => [number, number])[]} strings
+ * @param {((placeholder: string) => boolean)[]} placeholders
+ * @param {number} i
  * @param {any[]} result
  */
 var pathMatch = exports.pathMatch = function pathMatch(path, strings, placeholders) {
@@ -202,7 +202,7 @@ var pathMatch = exports.pathMatch = function pathMatch(path, strings, placeholde
         r[i] = placeholder;
 
         var match = pathMatch(path.substr(found + length), strings, placeholders, i + 1, r);
-        if (false !== match) {
+        if (match !== false) {
             return match;
         }
     }
@@ -230,9 +230,8 @@ var placeholderToFn = function placeholderToFn(expression) {
 };
 
 /**
- * 
- * @param {string[]} strings 
- * @param {any[]} placeholders 
+ * @param {string[]} strings
+ * @param {any[]} placeholders
  */
 var createPathMatcherFromTemplate = exports.createPathMatcherFromTemplate = function createPathMatcherFromTemplate(strings) {
     for (var _len = arguments.length, placeholders = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
@@ -257,4 +256,3 @@ var createPathMatcherFromTemplate = exports.createPathMatcherFromTemplate = func
 
     return fn;
 };
-//# sourceMappingURL=util.js.map

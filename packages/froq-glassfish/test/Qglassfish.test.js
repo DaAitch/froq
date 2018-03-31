@@ -1,11 +1,12 @@
-import { test } from 'ava';
-import Qdocker from 'froq-docker';
-import { parallel } from 'froq-util';
-import { default as createGlassfishClient } from '../src';
-import { create as mavenCreate } from 'maven';
-import { spawn } from 'child_process';
+import {test} from 'ava';
+import {create as mavenCreate} from 'maven';
+import {Docker} from 'froq-docker';
+import {parallel} from 'froq-util';
 
-const payaraDockerName = 'payara/server-full';
+import {Glassfish} from '../src';
+
+
+const payaraDockerName = 'payara/server-full:latest';
 const mvnProjectRoot = `${__dirname}/assets/helloworld`;
 const targetPath = `${mvnProjectRoot}/target`;
 const finalName = 'war-file';
@@ -14,22 +15,32 @@ const targetFile = `${targetPath}/${warFileName}`;
 
 
 test('should deploy', async t => {
-    const docker = Qdocker.fromSocket();
+    const docker = Docker.fromSocket();
     const mvn = mavenCreate({cwd: mvnProjectRoot});
 
     const [[container, glassfish]] = await parallel(
         async () => {
-            await docker.pull(payaraDockerName);
-            const container = await docker.createContainer(payaraDockerName)
-                .bind('4848/tcp')
-                .bind('8080/tcp')
-                .build()
-            ;
+            const image = await docker.pull({fromImage: payaraDockerName});
+            const cont = await image.createContainer({
+                data: {
+                    HostConfig: {
+                        PortBindings: {
+                            '4848/tcp': [
+                                {HostPort: ''}
+                            ],
+                            '8080/tcp': [
+                                {HostPort: ''}
+                            ]
+                        }
+                    }
+                }
+            });
 
-            await container.start();
-            const glassfish = createGlassfishClient(`https://${container.getHostAddress('4848/tcp')}`, 'admin', 'admin');
+            await cont.start();
+            const inspection = await cont.inspect();
+            const gf = new Glassfish(`https://${inspection.getFirstHostAddress('4848/tcp')}`, 'admin', 'admin');
 
-            return [container, glassfish];
+            return [cont, gf];
         },
         mvn.execute(['clean', 'package', `-Dfinal-name=${finalName}`])
     );

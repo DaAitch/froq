@@ -1,10 +1,11 @@
 {
   "name": "froq-util",
-  "version": "0.0.3",
+  "version": "0.0.7",
   "description": "froQ utils.",
   "main": "lib/index.js",
   "scripts": {
-    "build": "babel -s -d ./lib src",
+    "build": "babel -d ./lib src",
+    "build:debug": "babel -s -d ./lib src",
     "test": "echo 'froq-util has no tests.'",
     "clean": "rm -rf lib"
   },
@@ -20,7 +21,7 @@
   "author": "Philipp Renoth <renoth@wildoak.de>",
   "license": "MIT",
   "dependencies": {
-    "js-logging": "^0.1.0"
+    "debug": "^3.1.0"
   },
   "devDependencies": {
     "ava": "^0.24.0",

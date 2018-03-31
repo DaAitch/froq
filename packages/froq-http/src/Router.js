@@ -1,13 +1,13 @@
 export default class Router {
-    constructor() {
+    constructor () {
         this.routes = [];
     }
 
-    async handle(req, resp, next, lastRoute = undefined) {
+    async handle (req, resp, next, lastRoute = undefined) {
         const route = this.routes[
             lastRoute === undefined
                 ? 0
-                : this.routes.findIndex(route => route === lastRoute) + 1
+                : this.routes.findIndex(route_ => route_ === lastRoute) + 1
         ];
 
         if (!route) {
@@ -20,7 +20,7 @@ export default class Router {
         });
     }
 
-    add(route) {
+    add (route) {
         this.routes.push(route);
     }
 }

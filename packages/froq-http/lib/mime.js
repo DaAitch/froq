@@ -14,4 +14,3 @@ var isJsonType = exports.isJsonType = function isJsonType(type) {
 var isTextType = exports.isTextType = function isTextType(type) {
     return TEXT_TYPE.test(type);
 };
-//# sourceMappingURL=mime.js.map

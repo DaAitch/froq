@@ -1,16 +1,29 @@
-import Docker from './Docker';
 
 export default class Image {
 
     /**
      * @param {Docker} docker
      */
-    constructor (docker, repoTag) {
+    constructor (docker, name) {
         this._docker = docker;
-        this._repoTag = repoTag;
+        this._name = name;
     }
 
-    createContainer () {
-        return this._docker.createContainer(this._repoTag);
+    get name () {
+        return this._name;
+    }
+
+    async createContainer ({data = {}, name = undefined}) {
+        return await this._docker.createContainer({
+            data: {
+                ...data,
+                Image: this._name
+            },
+            name
+        });
+    }
+
+    async remove ({force = undefined, noprune = undefined} = {}) {
+        return await this._docker.removeImage({name: this._name, force, noprune});
     }
 }

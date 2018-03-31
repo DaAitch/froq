@@ -1,7 +1,7 @@
-import log from './log';
 import parallel from './parallel';
+import retry from './retry';
 
 export {
-    log,
-    parallel
+    parallel,
+    retry
 };
