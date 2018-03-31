@@ -1,8 +1,8 @@
 {
   "name": "froq-docker-util",
-  "version": "0.0.10",
+  "version": "0.0.12",
   "main": "lib/index.js",
-  "engines" : {
+  "engines": {
     "node": ">=6.10",
     "npm": ">=3.10.10"
   },
