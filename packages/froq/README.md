@@ -1,5 +1,7 @@
 # froQ
 
+[![Build Status](https://travis-ci.org/DaAitch/froq.svg?branch=master)](https://travis-ci.org/DaAitch/froq)
+
 <img src="froq.png" width="100" alt="froQ logo" />
 
 ## Currently we support

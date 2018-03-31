@@ -34,7 +34,8 @@
     "babel-preset-env": "^1.6.1",
     "babel-register": "^6.26.0",
     "froq-docker-util": "^0.0.10",
-    "node-fetch": "^2.1.2"
+    "node-fetch": "^2.1.2",
+    "froq-util": "^0.0.8"
   },
   "ava": {
     "require": [

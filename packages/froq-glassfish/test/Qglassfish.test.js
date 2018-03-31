@@ -13,8 +13,10 @@ const finalName = 'war-file';
 const warFileName = `${finalName}.war`;
 const targetFile = `${targetPath}/${warFileName}`;
 
+const noTravisTest = process.env.TRAVIS === 'true' ? test.skip : test;
 
-test('should deploy', async t => {
+
+noTravisTest('should deploy', async t => {
     const docker = Docker.fromSocket();
     const mvn = mavenCreate({cwd: mvnProjectRoot});
 

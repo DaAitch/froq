@@ -1,5 +1,7 @@
 # froq-docker-util
 
+[![Build Status](https://travis-ci.org/DaAitch/froq.svg?branch=master)](https://travis-ci.org/DaAitch/froq)
+
 <img src="froq.png" width="100" alt="froQ logo" />
 
 - [npm](https://www.npmjs.com/package/froq-docker-util)

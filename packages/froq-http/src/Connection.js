@@ -23,7 +23,7 @@ export default class Server {
      * @param {number?} port
      * @param {string?} address
      */
-    start (port = undefined, address = undefined) {
+    start (port = undefined, address = '0.0.0.0') {
         return new Promise(resolve => {
 
             this._server = http.createServer((req, resp) => {
@@ -44,7 +44,8 @@ export default class Server {
             });
 
             this._server.listen(port, address, () => {
-                debug('%s port %d bound', this._name, this.address.port);
+                const addr = this.address;
+                debug('%s address `%s` port %d bound', this._name, addr.address, addr.port);
                 resolve();
             });
 
