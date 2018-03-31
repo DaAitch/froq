@@ -35,7 +35,7 @@ We use npm package `debug`. To make me verbose use `DEBUG=froq-util`.
 ```js
 import {parallel} from 'froq-util';
 
-const [google, twitter] = parallel(fetch('https://google.de'), fetch('https://twitter.com));
+const [google, twitter] = parallel(fetch('https://google.de'), fetch('https://twitter.com'));
 ```
 
 
