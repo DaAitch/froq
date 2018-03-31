@@ -1,22 +1,13 @@
 import os from 'os';
-import http from 'http';
 import {Readable} from 'stream';
-import {EventEmitter} from 'events';
-
-import JSONStream from 'JSONStream';
 
 import debug from './debug';
 import Image from './Image';
 import Container from './Container';
 import Inspection from './Inspection';
-
-const json = arg => {
-    try {
-        return JSON.parse(arg);
-    } catch (e) {
-        return null;
-    }
-};
+import Connection from './Connection';
+import {toJson, jsonStream, progressStream, checkStatusCode} from './stream-util';
+import DockerRawStream from './DockerRawStream';
 
 const stringstream = stringOrBuffer => {
     const stream = new Readable();
@@ -39,17 +30,6 @@ const pick = obj => {
     return result;
 };
 
-const promisifyResponseStream = async (res, onProgress = undefined) => {
-    if (onProgress) {
-        res.on('progress', onProgress);
-    }
-
-    return await new Promise((resolve, reject) => {
-        res.on('error', reject);
-        res.on('end', resolve);
-    });
-};
-
 export default class Docker {
 
     static fromSocket (socketPath = undefined, https = false) {
@@ -65,130 +45,26 @@ export default class Docker {
     constructor (socketPath, https) {
         this._socketPath = socketPath;
         this._https = https;
-    }
 
-    async _request ({
-        path,
-        method,
-        query = undefined,
-        bodyStream = undefined,
-        bodyContentType = undefined,
-        responseStream = false
-    }) {
-        
-        const headers = {};
-
-        if (bodyContentType) {
-            headers['Content-Type'] = bodyContentType;
-        }
-
-        let queryString = '';
-        if (query) {
-            queryString = Object.keys(query)
-                .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(query[key])}`)
-                .join('&')
-            ;
-        }
-
-        const pathAndQuery = `${path}?${queryString}`;
-
-        const opts = {
-            socketPath: this._socketPath,
-            path: pathAndQuery,
-            method,
-            headers,
-        };
-
-        const req = http.request(opts, () => {});
-
-        return await new Promise((resolve, reject) => {
-            req.on('error', reject);
-            req.on('response', res => {
-
-                if (res.statusCode >= 400 && res.statusCode <= 599) {
-                    const chunks = [];
-
-                    res.on('data', chunk => {
-                        chunks.push(chunk);
-                    });
-                
-                    res.on('end', () => {
-                        const errorResult = Buffer.concat(chunks).toString();
-                        reject(new Error(`${res.statusCode} ${res.statusMessage}: ${pathAndQuery}\n\n${errorResult}`));
-                    });
-
-                    return;
-                }
-                
-                if (responseStream) {
-
-                    const ee = new EventEmitter();
-                    
-                    const parser = JSONStream.parse();
-                    let onData, onError, onEnd;
-
-                    const removeListener = () => {
-                        parser.removeListener('data', onData);
-                        parser.removeListener('error', onError);
-                        parser.removeListener('end', onEnd);
-                    };
-
-                    onData = event => {
-                        ee.emit('progress', event);
-                    };
-
-                    onError = e => {
-                        removeListener();
-                        ee.emit('error', e);
-                    };
-
-                    onEnd = () => {
-                        removeListener();
-                        ee.emit('end');
-                    };
-
-                    parser.on('data', onData);
-                    parser.on('error', onError);
-                    parser.on('end', onEnd);
-
-                    res.pipe(parser);
-
-                    return resolve(ee);
-                }
-
-                const chunks = [];
-
-                res.on('data', chunk => {
-                    chunks.push(chunk);
-                });
-            
-                res.on('end', () => {
-                    const buffer = Buffer.concat(chunks);
-                    const result = json(buffer);
-
-                    resolve(result);
-                });
-            });
-    
-            if (bodyStream) {
-
-                // auto end
-                bodyStream.pipe(req);
-            } else {
-
-                req.end();
-            }
-        });
+        this._connection = new Connection(socketPath);
     }
 
     async listContainers () {
         debug('list containers');
-        return await this._request({method: 'GET', path: '/containers/json'});
+        return await this._connection
+            .request({method: 'GET', path: '/containers/json'})
+            .then(checkStatusCode)
+            .then(toJson)
+        ;
     }
 
     async listImages () {
         debug('list images');
-        return await this._request({method: 'GET', path: '/images/json'});
+        return await this._connection
+            .request({method: 'GET', path: '/images/json'})
+            .then(checkStatusCode)
+            .then(toJson)
+        ;
     }
 
     /**
@@ -202,46 +78,48 @@ export default class Docker {
             fromImage
         };
 
-        if (tag) {
-            query.tag = tag;
-        }
-
-        const res = await this._request({
-            method: 'POST',
-            path: '/images/create',
-            query,
-            responseStream: true
-        });
-
-        await promisifyResponseStream(res, event => {
-            debug('pull event: %o', event);
-
-            if (onProgress) {
-                onProgress(event);
-            }
-        });
-
         let repoTag = fromImage;
         if (tag) {
+            query.tag = tag;
             repoTag += `:${tag}`;
         }
+
+        await this._connection
+            .request({
+                method: 'POST',
+                path: '/images/create',
+                query
+            })
+            .then(checkStatusCode)
+            .then(jsonStream)
+            .then(progressStream(data => {
+                debug('pull event: %o', data);
+
+                if (onProgress) {
+                    onProgress(data);
+                }
+            }))
+        ;
 
         return new Image(this, repoTag);
     }
 
     async createContainer ({data, name = undefined}) {
-
         debug('create container %O', {data, name});
 
-        const dataString = JSON.stringify(data);
-
-        const body = await this._request({
-            method: 'POST',
-            path: '/containers/create',
-            query: pick({name}),
-            bodyStream: stringstream(dataString),
-            bodyContentType: 'application/json'
-        });
+        const body = await this._connection
+            .request({
+                method: 'POST',
+                path: '/containers/create',
+                query: pick({name}),
+                writeStream: stringstream(JSON.stringify(data)),
+                headers: {
+                    'content-type': 'application/json'
+                }
+            })
+            .then(checkStatusCode)
+            .then(toJson)
+        ;
 
         const containerId = body && body.Id;
         return new Container(this, containerId);
@@ -250,41 +128,57 @@ export default class Docker {
     async startContainer ({id, detachKeys = undefined}) {
         debug('start container: %o', {id, detachKeys});
 
-        return await this._request({
-            method: 'POST',
-            path: `/containers/${encodeURIComponent(id)}/start`,
-            query: pick({detachKeys})
-        });
+        return await this._connection
+            .request({
+                method: 'POST',
+                path: `/containers/${encodeURIComponent(id)}/start`,
+                query: pick({detachKeys})
+            })
+            .then(checkStatusCode)
+            .then(toJson)
+        ;
     }
 
     async stopContainer ({id, t = undefined}) {
         debug('stop container: %o', {id, t});
 
-        return await this._request({
-            method: 'POST',
-            path: `/containers/${encodeURIComponent(id)}/stop`,
-            query: pick({t})
-        });
+        return await this._connection
+            .request({
+                method: 'POST',
+                path: `/containers/${encodeURIComponent(id)}/stop`,
+                query: pick({t})
+            })
+            .then(checkStatusCode)
+            .then(toJson)
+        ;
     }
 
     async removeContainer ({id, v = undefined, force = undefined, link = undefined}) {
         debug('remove container: %o', {id, v, force, link});
 
-        return await this._request({
-            method: 'DELETE',
-            path: `/containers/${encodeURIComponent(id)}`,
-            query: pick({v, force, link})
-        });
+        return await this._connection
+            .request({
+                method: 'DELETE',
+                path: `/containers/${encodeURIComponent(id)}`,
+                query: pick({v, force, link})
+            })
+            .then(checkStatusCode)
+            .then(toJson)
+        ;
     }
 
     async inspectContainer ({id, size = undefined}) {
         debug('inspect container: %o', {id, size});
 
-        const data = await this._request({
-            method: 'GET',
-            path: `/containers/${encodeURIComponent(id)}/json`,
-            query: pick({size})
-        });
+        const data = await this._connection
+            .request({
+                method: 'GET',
+                path: `/containers/${encodeURIComponent(id)}/json`,
+                query: pick({size})
+            })
+            .then(checkStatusCode)
+            .then(toJson)
+        ;
 
         return new Inspection(this, data);
     }
@@ -292,35 +186,80 @@ export default class Docker {
     async waitForContainer ({id, condition = undefined}) {
         debug('wait for container: %o', {id, condition});
         
-        return await this._request({
-            method: 'POST',
-            path: `/containers/${encodeURIComponent(id)}/wait`,
-            query: pick({condition})
+        return await this._connection
+            .request({
+                method: 'POST',
+                path: `/containers/${encodeURIComponent(id)}/wait`,
+                query: pick({condition})
+            })
+            .then(checkStatusCode)
+            .then(toJson)
+        ;
+    }
+
+    async attachContainer ({id}, streamCb) {
+        debug('attach container %s', id);
+        
+        return await new Promise((resolve, reject) => {
+            this._connection
+                .request({
+                    method: 'POST',
+                    path: `/containers/${encodeURIComponent(id)}/attach`,
+                    query: {
+                        stream: '1',
+                        stdout: '1',
+                        stderr: '1'
+                    },
+                    headers: {
+                        'content-type': 'application/vnd.docker.raw-stream',
+                        upgrade: 'tcp',
+                        connection: 'Upgrade'
+                    },
+                    upgrade: (res_, socket, upgradeHeader) => {
+                        socket.on('error', err => {
+                            debug('socket error container %s: %o', id, err);
+                            reject(err);
+                        });
+
+                        // `socket.end` does not emit 'end' event, so with
+                        // rawStream.end() also socket is ended and this is resolved
+
+                        streamCb(new DockerRawStream(res_, socket, upgradeHeader, () => {
+                            debug('socket ended container %s', id);
+                            resolve();
+                        }));
+                    }
+                })
+            ;
         });
     }
 
-    async build ({dockerfile = undefined, t, bodyStream, bodyContentType}, onProgress = undefined) {
-        debug('build image: %o', {dockerfile, t, bodyContentType});
+    async build ({dockerfile = undefined, t, writeStream, contentType}, onProgress = undefined) {
+        debug('build image: %o', {dockerfile, t, contentType});
 
-        const res = await this._request({
-            method: 'POST',
-            path: '/build',
-            query: pick({
-                dockerfile,
-                t
-            }),
-            bodyStream,
-            bodyContentType,
-            responseStream: true
-        });
+        await this._connection
+            .request({
+                method: 'POST',
+                path: '/build',
+                query: pick({
+                    dockerfile,
+                    t
+                }),
+                writeStream,
+                headers: {
+                    'content-type': contentType
+                }
+            })
+            .then(checkStatusCode)
+            .then(jsonStream)
+            .then(progressStream(data => {
+                debug('build event: %o', data);
 
-        await promisifyResponseStream(res, event => {
-            debug('build event: %o', event);
-
-            if (onProgress) {
-                onProgress(event);
-            }
-        });
+                if (onProgress) {
+                    onProgress(data);
+                }
+            }))
+        ;
 
         return new Image(this, t);
     }
@@ -328,10 +267,14 @@ export default class Docker {
     async removeImage ({name, force = undefined, noprune = undefined}) {
         debug('remove image: %o', {name, force, noprune});
         
-        await this._request({
-            method: 'DELETE',
-            path: `/images/${encodeURIComponent(name)}`,
-            query: pick({force, noprune})
-        });
+        await this._connection
+            .request({
+                method: 'DELETE',
+                path: `/images/${encodeURIComponent(name)}`,
+                query: pick({force, noprune})
+            })
+            .then(checkStatusCode)
+            .then(toJson)
+        ;
     }
 }

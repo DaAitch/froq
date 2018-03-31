@@ -76,14 +76,13 @@ const buildTar = 'build.tar.gz';
 const stats = await stat(buildTar);
 
 // create read stream for tar file
-const bodyStream = fs.createReadStream(buildTar);
+const writeStream = fs.createReadStream(buildTar);
 
 // build image
 const image = await docker.build({
     t: 'mynewimage',
-    bodyStream,
-    bodyContentLength: stats.size,
-    bodyContentType: 'application/x-gzip'
+    writeStream,
+    contentType: 'application/x-gzip'
 });
 
 // use it
@@ -128,6 +127,24 @@ const containers = await docker.listContainers();
 
 ```js
 const images = await docker.listImages();
+```
+
+
+### Attach Container
+
+```js
+await container.attach(raw => {
+    raw.stdout.on('data', chunk => {
+        // what the container writes to stdout
+    });
+
+    raw.stderr.on('data', chunk => {
+        // what the container writes to stderr
+    });
+
+    // close raw stream
+    // raw.end()
+});
 ```
 
 

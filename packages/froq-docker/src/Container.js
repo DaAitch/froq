@@ -51,5 +51,11 @@ export default class Container {
         });
     }
 
+    async attach (streamCb) {
+        return await this._docker.attachContainer({
+            id: this._id
+        }, streamCb);
+    }
+
     
 }

@@ -57,8 +57,8 @@ test('should build image from tar, fetch homepage, clean up', async t => {
     const [image] = await Promise.all([
         t.context.docker.build({
             t: imageName,
-            bodyStream: bs.stream,
-            bodyContentType: bs.contentType
+            writeStream: bs.stream,
+            contentType: bs.contentType
         }),
         (async () => {
             await bs.addFileAsBuffer('Dockerfile', `
@@ -100,6 +100,47 @@ COPY index.html /usr/local/apache2/htdocs/index.html
     await container.remove();
 
     await image.remove();
+
+    t.pass();
+});
+
+test('should attach to container reading logs', async t => {
+    
+    const image = await t.context.docker.pull({fromImage: 'library/httpd', tag: 'latest'});
+
+    const container = await image.createContainer({
+        data: {
+            HostConfig: {
+                PortBindings: {
+                    '80/tcp': [
+                        {HostPort: ''}
+                    ]
+                }
+            }
+        }
+    });
+    await container.start();
+
+    const inspection = await container.inspect();
+    const address = inspection.getFirstHostAddress('80/tcp');
+
+    await Promise.all([
+        container.attach(raw => {
+            let stdout = '';
+            raw.stdout.on('data', chunk => {
+                stdout += chunk.toString();
+
+                if (stdout.indexOf('GET /test HTTP/1.1') !== -1) {
+                    raw.end();
+                }
+            });
+        }),
+        retry({try: () => fetch(`http://${address}/test`)})
+    ]);
+
+    await container.stop();
+    await container.wait();
+    await container.remove();
 
     t.pass();
 });

@@ -78,5 +78,15 @@ class Container {
         })();
     }
 
+    attach(streamCb) {
+        var _this6 = this;
+
+        return _asyncToGenerator(function* () {
+            return yield _this6._docker.attachContainer({
+                id: _this6._id
+            }, streamCb);
+        })();
+    }
+
 }
 exports.default = Container;
