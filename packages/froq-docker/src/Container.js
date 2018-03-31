@@ -1,19 +1,17 @@
-import { log } from 'froq-util';
-import Dockerode from 'dockerode';
+import {log} from 'froq-util';
 
 export default class Container {
     
     /**
-     * 
-     * @param {Dockerode.Container} container 
+     * @param {Dockerode.Container} container
      */
-    constructor(container) {
+    constructor (container) {
         this._container = container;
     }
 
-    async start() {
+    async start () {
         log.info('start container');
-        const startResult = await this._container.start()
+        const startResult = await this._container.start();
         this._inspection = await this.inspect();
 
         log.info('start container done');
@@ -21,21 +19,21 @@ export default class Container {
         return startResult;
     }
 
-    async stop() {
+    async stop () {
         log.info('stop container');
         const result = await this._container.stop();
         log.info('stop container done');
         return result;
     }
        
-    async remove() {
+    async remove () {
         log.info('remove container');
         const result = await this._container.remove();
         log.info('remove container done');
         return result;
     }
     
-    async inspect() {
+    async inspect () {
         log.info('inspect container');
         const result = await this._container.inspect();
         log.info('inspect container done');
@@ -43,11 +41,11 @@ export default class Container {
         return result;
     }
 
-    getHostAddresses(port) {
+    getHostAddresses (port) {
         return this._inspection.NetworkSettings.Ports[port].map(x => `${x.HostIp}:${x.HostPort}`); // IPv6?
     }
 
-    getHostAddress(port) {
+    getHostAddress (port) {
         const addresses = this.getHostAddresses(port);
         if (addresses.length === 0) {
             return null;

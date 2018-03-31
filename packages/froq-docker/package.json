@@ -21,9 +21,11 @@
   "license": "MIT",
   "description": "Integration Testing environment orchestration made easy for Docker.",
   "dependencies": {
+    "docker-modem": "^1.0.6",
     "dockerode": "^2.5.3",
     "froq-util": "^0.0.3",
-    "os": "^0.1.1"
+    "os": "^0.1.1",
+    "request": "^2.85.0"
   },
   "devDependencies": {
     "ava": "^0.24.0",
