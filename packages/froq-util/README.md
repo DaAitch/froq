@@ -7,6 +7,7 @@
 ![npm](https://img.shields.io/npm/v/froq-util.png?style=flat-square)
 ![node](https://img.shields.io/node/v/froq-util.png?style=flat-square)
 
+![license](https://img.shields.io/github/license/DaAitch/froq.png?style=flat-square)
 ![GitHub tag](https://img.shields.io/github/tag/DaAitch/froq.png?style=flat-square)
 ![GitHub issues](https://img.shields.io/github/issues/DaAitch/froq.png?style=flat-square)
 ![GitHub last commit](https://img.shields.io/github/last-commit/DaAitch/froq.png?style=flat-square)
