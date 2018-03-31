@@ -1,6 +1,17 @@
 # froq-docker-util
 
-[![Build Status](https://travis-ci.org/DaAitch/froq.svg?branch=master)](https://travis-ci.org/DaAitch/froq)
+![Travis branch](https://img.shields.io/travis/DaAitch/froq/master.png?style=flat-square)
+![Stability](https://img.shields.io/badge/Stability-experimental-orange.png?style=flat-square)
+![Looking for Contributers](https://img.shields.io/badge/Looking%20for-Contributers-green.png?style=flat-square)
+
+![npm](https://img.shields.io/npm/v/froq-docker-util.png?style=flat-square)
+![node](https://img.shields.io/node/v/froq-docker-util.png?style=flat-square)
+
+![GitHub tag](https://img.shields.io/github/tag/DaAitch/froq.png?style=flat-square)
+![GitHub issues](https://img.shields.io/github/issues/DaAitch/froq.png?style=flat-square)
+![GitHub last commit](https://img.shields.io/github/last-commit/DaAitch/froq.png?style=flat-square)
+![GitHub top language](https://img.shields.io/github/languages/top/DaAitch/froq.png?style=flat-square)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/DaAitch/froq.png?style=flat-square)
 
 <img src="froq.png" width="100" alt="froQ logo" />
 
