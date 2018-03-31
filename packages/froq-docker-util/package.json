@@ -2,6 +2,10 @@
   "name": "froq-docker-util",
   "version": "0.0.10",
   "main": "lib/index.js",
+  "engines" : {
+    "node": ">=6.10",
+    "npm": ">=3.10.10"
+  },
   "scripts": {
     "build": "babel -d ./lib src",
     "build:debug": "babel -s -d ./lib src",

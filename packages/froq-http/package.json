@@ -1,8 +1,12 @@
 {
   "name": "froq-http",
   "version": "0.0.8",
-  "description": "Integration Testing environment orchestration made easy for HTTP.",
   "main": "lib/index.js",
+  "engines" : {
+    "node": ">=6.10",
+    "npm": ">=3.10.10"
+  },
+  "description": "Integration Testing environment orchestration made easy for HTTP.",
   "scripts": {
     "build": "babel -d ./lib src",
     "build:debug": "babel -s -d ./lib src",
