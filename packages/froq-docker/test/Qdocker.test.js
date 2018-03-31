@@ -17,17 +17,17 @@ import Qdocker from '../src';
 //     t.pass();
 // });
 
-test.only('should start docker and shutdown, cleanup', async t => {
+test.serial('should start docker and shutdown, cleanup', async t => {
     const docker = Qdocker.fromSocket();
-    await docker.pull('alpine');
+    
+    console.info('pull image');
+    const image = await docker.pull({fromImage: 'library/alpine'}, event => {
+        console.info(event.status);
+    });
 
-    // const container = await docker
-    //     .createContainer('alpine')
-    //     .build()
-    // ;
-
-    // console.log(container);
-
+    const container = await image.createContainer().build();
+    await container.start();
+    
     // await container.start();
 
     // await container.stop();
@@ -36,7 +36,7 @@ test.only('should start docker and shutdown, cleanup', async t => {
     t.pass();
 });
 
-test('should get containers', async t => {
+test.serial('should get containers', async t => {
     const docker = Qdocker.fromSocket();
     const containers = await docker.getContainers();
     t.truthy(Array.isArray(containers));
