@@ -1,6 +1,6 @@
 {
   "name": "froq-glassfish",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "main": "lib/index.js",
   "engines": {
     "node": ">=6.10",
@@ -39,7 +39,7 @@
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "babel-register": "^6.26.0",
-    "froq-docker": "^0.0.17",
+    "froq-docker": "^0.0.18",
     "maven": "^4.3.0"
   },
   "ava": {
