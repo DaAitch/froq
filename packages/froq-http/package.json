@@ -1,6 +1,6 @@
 {
   "name": "froq-http",
-  "version": "0.0.15",
+  "version": "0.0.19",
   "main": "lib/index.js",
   "engines": {
     "node": ">=6.10",
@@ -27,7 +27,7 @@
   "license": "MIT",
   "dependencies": {
     "debug": "^3.1.0",
-    "froq-util": "^0.0.15",
+    "froq-util": "^0.0.19",
     "http-proxy": "^1.16.2",
     "mime-types": "^2.1.17"
   },

@@ -1,6 +1,6 @@
 {
   "name": "froq-docker",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "main": "lib/index.js",
   "engines": {
     "node": ">=6.10",
@@ -38,8 +38,8 @@
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "babel-register": "^6.26.0",
-    "froq-docker-util": "^0.0.15",
-    "froq-util": "^0.0.15",
+    "froq-docker-util": "^0.0.19",
+    "froq-util": "^0.0.19",
     "node-fetch": "^2.1.2"
   },
   "ava": {

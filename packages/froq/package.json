@@ -1,6 +1,6 @@
 {
   "name": "froq",
-  "version": "0.0.15",
+  "version": "0.0.19",
   "engines": {
     "node": ">=6.10",
     "npm": ">=3.10.10"
