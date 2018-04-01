@@ -4,9 +4,7 @@ node_js:
   - "8.11.1"
 
 env:
-  - TRAVIS=true
-  - DEBUG=froq-*
-  - DEBUG_COLORS=1
+  - TRAVIS=true DEBUG="froq-*" DEBUG_COLORS=1
 
 services:
   - docker
