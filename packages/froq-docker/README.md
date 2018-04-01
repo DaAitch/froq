@@ -148,6 +148,36 @@ await container.attach(raw => {
 ```
 
 
+### Exec Container
+
+```js
+const exec = await container.createExec({
+    AttachStdin: true,
+    AttachStdout: true,
+    AttachStderr: true,
+    DetachKeys: 'ctrl-p,ctrl-q',
+    Tty: true,
+    Cmd: [
+        '/bin/bash'
+    ]
+});
+
+await exec.start({
+    Detach: false,
+    Tty: true
+}, duplex => {
+
+    duplex.out.on('data', chunk => {
+        console.log(`server writes: ${chunk.toString()}`);
+    });
+
+    duplex.write('echo "Awesome!"\n').then(() => {
+        duplex.end();
+    });
+});
+```
+
+
 ## Tests
 
 To get a better understanding, also read the [Tests](https://github.com/DaAitch/froq/tree/master/packages/froq-docker/test/Docker.test.js)

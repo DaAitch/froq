@@ -3,7 +3,7 @@
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-exports.checkStatusCode = exports.progressStream = exports.jsonStream = exports.toJson = exports.drainStream = undefined;
+exports.checkStatusCode = exports.progressStream = exports.jsonStream = exports.toJson = exports.debugStream = exports.drainStream = undefined;
 
 var _JSONStream = require('JSONStream');
 
@@ -39,8 +39,32 @@ const drainStream = exports.drainStream = (() => {
     };
 })();
 
-const toJson = exports.toJson = (() => {
+const debugStream = exports.debugStream = (() => {
     var _ref2 = _asyncToGenerator(function* (res) {
+        return new Promise(function (resolve, reject) {
+
+            res.on('error', function (err) {
+                (0, _debug2.default)('debug stream error: %o', err);
+                reject(err);
+            });
+            res.on('data', function (chunk) {
+                (0, _debug2.default)('debug stream: %s', chunk.toString());
+            });
+
+            res.on('end', function () {
+                (0, _debug2.default)('debug stream end');
+                resolve();
+            });
+        });
+    });
+
+    return function debugStream(_x2) {
+        return _ref2.apply(this, arguments);
+    };
+})();
+
+const toJson = exports.toJson = (() => {
+    var _ref3 = _asyncToGenerator(function* (res) {
         if (res.statusCode === 204) {
             return undefined;
         }
@@ -56,13 +80,13 @@ const toJson = exports.toJson = (() => {
         }
     });
 
-    return function toJson(_x2) {
-        return _ref2.apply(this, arguments);
+    return function toJson(_x3) {
+        return _ref3.apply(this, arguments);
     };
 })();
 
 const jsonStream = exports.jsonStream = (() => {
-    var _ref3 = _asyncToGenerator(function* (stream) {
+    var _ref4 = _asyncToGenerator(function* (stream) {
         return new Promise(function (resolve) {
             const parser = _JSONStream2.default.parse();
             stream.pipe(parser);
@@ -70,13 +94,13 @@ const jsonStream = exports.jsonStream = (() => {
         });
     });
 
-    return function jsonStream(_x3) {
-        return _ref3.apply(this, arguments);
+    return function jsonStream(_x4) {
+        return _ref4.apply(this, arguments);
     };
 })();
 
 const progressStream = exports.progressStream = onProgress => (() => {
-    var _ref4 = _asyncToGenerator(function* (stream) {
+    var _ref5 = _asyncToGenerator(function* (stream) {
         if (onProgress) {
             stream.on('data', onProgress);
         }
@@ -87,8 +111,8 @@ const progressStream = exports.progressStream = onProgress => (() => {
         });
     });
 
-    return function (_x4) {
-        return _ref4.apply(this, arguments);
+    return function (_x5) {
+        return _ref5.apply(this, arguments);
     };
 })();
 

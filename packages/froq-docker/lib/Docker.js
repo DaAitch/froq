@@ -36,6 +36,10 @@ var _DockerRawStream = require('./DockerRawStream');
 
 var _DockerRawStream2 = _interopRequireDefault(_DockerRawStream);
 
+var _DockerDuplexStream = require('./DockerDuplexStream');
+
+var _DockerDuplexStream2 = _interopRequireDefault(_DockerDuplexStream);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
@@ -247,7 +251,7 @@ class Docker {
                         upgrade: 'tcp',
                         connection: 'Upgrade'
                     },
-                    upgrade: function (res_, socket, upgradeHeader) {
+                    upgrade: function (res_, socket) {
                         socket.on('error', function (err) {
                             (0, _debug2.default)('socket error container %s: %o', id, err);
                             reject(err);
@@ -256,7 +260,59 @@ class Docker {
                         // `socket.end` does not emit 'end' event, so with
                         // rawStream.end() also socket is ended and this is resolved
 
-                        streamCb(new _DockerRawStream2.default(res_, socket, upgradeHeader, function () {
+                        streamCb(new _DockerRawStream2.default(socket, function () {
+                            (0, _debug2.default)('socket ended container %s', id);
+                            resolve();
+                        }));
+                    }
+                });
+            });
+        })();
+    }
+
+    createContainerExec({ id, data }) {
+        var _this11 = this;
+
+        return _asyncToGenerator(function* () {
+            (0, _debug2.default)('create container exec for %s: %o', id, data);
+
+            return yield _this11._connection.request({
+                method: 'POST',
+                path: `/containers/${encodeURIComponent(id)}/exec`,
+                writeStream: stringstream(JSON.stringify(data)),
+                headers: {
+                    'content-type': 'application/json'
+                }
+            }).then(_streamUtil.checkStatusCode).then(_streamUtil.toJson);
+        })();
+    }
+
+    startContainerExec({ id, data }, streamCb) {
+        var _this12 = this;
+
+        return _asyncToGenerator(function* () {
+            (0, _debug2.default)('start container exec %s: %o', id, data);
+
+            return yield new Promise(function (resolve, reject) {
+                _this12._connection.request({
+                    method: 'POST',
+                    path: `/exec/${encodeURIComponent(id)}/start`,
+                    writeStream: stringstream(JSON.stringify(data)),
+                    headers: {
+                        'content-type': 'application/json',
+                        upgrade: 'tcp',
+                        connection: 'Upgrade'
+                    },
+                    upgrade: function (res_, socket) {
+                        socket.on('error', function (err) {
+                            (0, _debug2.default)('socket error container %s: %o', id, err);
+                            reject(err);
+                        });
+
+                        // `socket.end` does not emit 'end' event, so with
+                        // rawStream.end() also socket is ended and this is resolved
+
+                        streamCb(new _DockerDuplexStream2.default(socket, function () {
                             (0, _debug2.default)('socket ended container %s', id);
                             resolve();
                         }));
@@ -267,12 +323,12 @@ class Docker {
     }
 
     build({ dockerfile = undefined, t, writeStream, contentType }, onProgress = undefined) {
-        var _this11 = this;
+        var _this13 = this;
 
         return _asyncToGenerator(function* () {
             (0, _debug2.default)('build image: %o', { dockerfile, t, contentType });
 
-            yield _this11._connection.request({
+            yield _this13._connection.request({
                 method: 'POST',
                 path: '/build',
                 query: pick({
@@ -291,17 +347,17 @@ class Docker {
                 }
             }));
 
-            return new _Image2.default(_this11, t);
+            return new _Image2.default(_this13, t);
         })();
     }
 
     removeImage({ name, force = undefined, noprune = undefined }) {
-        var _this12 = this;
+        var _this14 = this;
 
         return _asyncToGenerator(function* () {
             (0, _debug2.default)('remove image: %o', { name, force, noprune });
 
-            yield _this12._connection.request({
+            yield _this14._connection.request({
                 method: 'DELETE',
                 path: `/images/${encodeURIComponent(name)}`,
                 query: pick({ force, noprune })

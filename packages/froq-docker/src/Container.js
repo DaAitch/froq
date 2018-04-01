@@ -1,3 +1,4 @@
+import Exec from "./Exec";
 
 export default class Container {
     
@@ -57,5 +58,13 @@ export default class Container {
         }, streamCb);
     }
 
+    async createExec (data) {
+        const result = await this._docker.createContainerExec({
+            id: this._id,
+            data
+        });
+
+        return new Exec(this._docker, result && result.Id);
+    }
     
 }

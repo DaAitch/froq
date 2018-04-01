@@ -17,6 +17,24 @@ export const drainStream = async res => {
     });
 };
 
+export const debugStream = async res => {
+    return new Promise((resolve, reject) => {
+
+        res.on('error', err => {
+            debug('debug stream error: %o', err);
+            reject(err);
+        });
+        res.on('data', chunk => {
+            debug('debug stream: %s', chunk.toString());
+        });
+    
+        res.on('end', () => {
+            debug('debug stream end');
+            resolve();
+        });
+    });
+};
+
 
 export const toJson = async res => {
     if (res.statusCode === 204) {

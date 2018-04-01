@@ -36,23 +36,35 @@ export default class Connection {
             headers,
         };
 
+        debug('%s %s: %o', method, pathAndQuery, {headers});
         const req = http.request(opts, () => {});
 
         if (upgrade) {
-            req.on('upgrade', upgrade);
+            req.on('upgrade', (res, socket, upgradeHeader) => {
+                debug('getting response upgrade %d "%s": %o', res.statusCode, res.statusMessage, {headers: res.headers});
+                upgrade(res, socket, upgradeHeader);
+            });
         }
 
         return await new Promise((resolve, reject) => {
             req.on('error', reject);
-            req.on('response', resolve);
+            req.on('response', res => {
+                debug('getting response %d "%s": %o', res.statusCode, res.statusMessage, {headers: res.headers});
+                resolve(res);
+            });
     
             if (writeStream) {
-                debug('writing stream to request');
-                writeStream.pipe(req);
-            } else if (upgrade) {
+                const pipeOpts = {end: !upgrade};
+                debug('writing stream to request: %o', pipeOpts);
+                writeStream.pipe(req, pipeOpts);
+            }
+            
+            if (upgrade && !req.headersSent) {
                 debug('flush headers');
                 req.flushHeaders();
-            } else {
+            }
+
+            if (!writeStream && !upgrade) {
                 debug('request end');
                 req.end();
             }

@@ -1,5 +1,3 @@
-import http from 'http';
-import net from 'net';
 import {EventEmitter} from 'events';
 
 import debug from './debug';
@@ -7,15 +5,12 @@ import debug from './debug';
 export default class DockerRawStream {
 
     /**
-     * @param {http.ServerResponse} res
      * @param {net.Socket} socket
-     * @param {string} upgradeHeader
+     * @param {Function} onEnd
      */
-    constructor (res, socket, upgradeHeader, onEnd) {
+    constructor (socket, onEnd) {
 
-        this._res = res;
         this._socket = socket;
-        this._upgradeHeader = upgradeHeader;
         this._onEnd = onEnd;
 
         this._std = [
@@ -39,7 +34,7 @@ export default class DockerRawStream {
 
     _onData = chunk => {
 
-        debug('received chunk size %s', chunk.length);
+        debug('received chunk size %s: %s', chunk.length, chunk.toString());
 
         if (!this._chunk) {
             this._chunk = chunk;
@@ -49,7 +44,7 @@ export default class DockerRawStream {
 
         this._reduceChunk();
     };
-
+    
     _reduceChunk () {
         // too small for reading header
         if (this._chunk.length < 8) {
@@ -76,6 +71,31 @@ export default class DockerRawStream {
         std.emit('data', data);
 
         process.nextTick(() => this._reduceChunk());
+    }
+
+    async write (chunk) {
+
+        const size = Buffer.byteLength(chunk);
+
+        debug('write chunk size %d', size);
+
+        const writeBuffer = new Buffer(8);
+        writeBuffer.writeUInt32BE(0, 0);
+        writeBuffer.writeUInt32BE(size, 4);
+
+        this._socket.cork();
+
+        // write header
+        this._socket.write(writeBuffer);
+
+        return await new Promise(resolve => {
+            // write frame
+            this._socket.write(chunk, resolve);
+
+            process.nextTick(() => {
+                this._socket.uncork();
+            });
+        });
     }
 
     end () {

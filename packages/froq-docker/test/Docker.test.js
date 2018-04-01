@@ -144,3 +144,54 @@ test('should attach to container reading logs', async t => {
 
     t.pass();
 });
+
+test('should create test.html via exec commands and test via fetch', async t => {
+    
+    const image = await t.context.docker.pull({fromImage: 'library/httpd', tag: 'latest'});
+
+    const container = await image.createContainer({
+        data: {
+            HostConfig: {
+                PortBindings: {
+                    '80/tcp': [
+                        {HostPort: ''}
+                    ]
+                }
+            }
+        }
+    });
+    await container.start();
+
+    const exec = await container.createExec({
+        AttachStdin: true,
+        AttachStdout: true,
+        AttachStderr: true,
+        DetachKeys: 'ctrl-p,ctrl-q',
+        Tty: true,
+        Cmd: [
+            '/bin/bash'
+        ]
+    });
+
+    await exec.start({
+        Detach: false,
+        Tty: true
+    }, duplex => {
+        duplex.write('cd /usr/local/apache2/htdocs && echo "test_index" > test.html\n').then(() => {
+            duplex.end();
+        });
+    });
+
+    const inspection = await container.inspect();
+    const address = inspection.getFirstHostAddress('80/tcp');
+
+    const response = await retry({try: () => fetch(`http://${address}/test.html`)});
+    const text = await response.text();
+    t.is(text, 'test_index\n');
+
+    await container.stop();
+    await container.wait();
+    await container.remove();
+
+    t.pass();
+});

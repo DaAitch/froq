@@ -50,23 +50,35 @@ class Connection {
                 headers
             };
 
+            (0, _debug2.default)('%s %s: %o', method, pathAndQuery, { headers });
             const req = _http2.default.request(opts, function () {});
 
             if (upgrade) {
-                req.on('upgrade', upgrade);
+                req.on('upgrade', function (res, socket, upgradeHeader) {
+                    (0, _debug2.default)('getting response upgrade %d "%s": %o', res.statusCode, res.statusMessage, { headers: res.headers });
+                    upgrade(res, socket, upgradeHeader);
+                });
             }
 
             return yield new Promise(function (resolve, reject) {
                 req.on('error', reject);
-                req.on('response', resolve);
+                req.on('response', function (res) {
+                    (0, _debug2.default)('getting response %d "%s": %o', res.statusCode, res.statusMessage, { headers: res.headers });
+                    resolve(res);
+                });
 
                 if (writeStream) {
-                    (0, _debug2.default)('writing stream to request');
-                    writeStream.pipe(req);
-                } else if (upgrade) {
+                    const pipeOpts = { end: !upgrade };
+                    (0, _debug2.default)('writing stream to request: %o', pipeOpts);
+                    writeStream.pipe(req, pipeOpts);
+                }
+
+                if (upgrade && !req.headersSent) {
                     (0, _debug2.default)('flush headers');
                     req.flushHeaders();
-                } else {
+                }
+
+                if (!writeStream && !upgrade) {
                     (0, _debug2.default)('request end');
                     req.end();
                 }

@@ -8,6 +8,7 @@ import Inspection from './Inspection';
 import Connection from './Connection';
 import {toJson, jsonStream, progressStream, checkStatusCode} from './stream-util';
 import DockerRawStream from './DockerRawStream';
+import DockerDuplexStream from './DockerDuplexStream';
 
 const stringstream = stringOrBuffer => {
     const stream = new Readable();
@@ -215,7 +216,7 @@ export default class Docker {
                         upgrade: 'tcp',
                         connection: 'Upgrade'
                     },
-                    upgrade: (res_, socket, upgradeHeader) => {
+                    upgrade: (res_, socket) => {
                         socket.on('error', err => {
                             debug('socket error container %s: %o', id, err);
                             reject(err);
@@ -224,7 +225,57 @@ export default class Docker {
                         // `socket.end` does not emit 'end' event, so with
                         // rawStream.end() also socket is ended and this is resolved
 
-                        streamCb(new DockerRawStream(res_, socket, upgradeHeader, () => {
+                        streamCb(new DockerRawStream(socket, () => {
+                            debug('socket ended container %s', id);
+                            resolve();
+                        }));
+                    }
+                })
+            ;
+        });
+    }
+
+    async createContainerExec ({id, data}) {
+        debug('create container exec for %s: %o', id, data);
+
+        return await this._connection
+            .request({
+                method: 'POST',
+                path: `/containers/${encodeURIComponent(id)}/exec`,
+                writeStream: stringstream(JSON.stringify(data)),
+                headers: {
+                    'content-type': 'application/json'
+                }
+            })
+            .then(checkStatusCode)
+            .then(toJson)
+        ;
+    }
+
+    async startContainerExec ({id, data}, streamCb) {
+        debug('start container exec %s: %o', id, data);
+
+        return await new Promise((resolve, reject) => {
+            this._connection
+                .request({
+                    method: 'POST',
+                    path: `/exec/${encodeURIComponent(id)}/start`,
+                    writeStream: stringstream(JSON.stringify(data)),
+                    headers: {
+                        'content-type': 'application/json',
+                        upgrade: 'tcp',
+                        connection: 'Upgrade'
+                    },
+                    upgrade: (res_, socket) => {
+                        socket.on('error', err => {
+                            debug('socket error container %s: %o', id, err);
+                            reject(err);
+                        });
+
+                        // `socket.end` does not emit 'end' event, so with
+                        // rawStream.end() also socket is ended and this is resolved
+                        
+                        streamCb(new DockerDuplexStream(socket, () => {
                             debug('socket ended container %s', id);
                             resolve();
                         }));
