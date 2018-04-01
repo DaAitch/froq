@@ -1,4 +1,4 @@
-import Exec from "./Exec";
+import Exec from './Exec';
 
 export default class Container {
     
