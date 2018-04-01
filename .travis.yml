@@ -17,4 +17,6 @@ install:
   - yarn run build
 
 script:
-  - lerna run test
+  - lerna run test:coverage
+
+after_success: yarn run coverage

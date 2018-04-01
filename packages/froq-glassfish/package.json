@@ -11,7 +11,9 @@
     "build": "babel -d ./lib src",
     "build:debug": "babel -s -d ./lib src",
     "test": "NODE_TLS_REJECT_UNAUTHORIZED=0 ava test/*.test.js --verbose",
-    "clean": "rm -rf lib"
+    "test:coverage": "nyc $npm_execpath run test",
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "clean": "rm -rf lib  &&  rm -rf .nyc_output"
   },
   "repository": {
     "type": "git",
@@ -39,8 +41,10 @@
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "babel-register": "^6.26.0",
+    "coveralls": "^3.0.0",
     "froq-docker": "^0.0.19",
-    "maven": "^4.3.0"
+    "maven": "^4.3.0",
+    "nyc": "^11.6.0"
   },
   "ava": {
     "require": [

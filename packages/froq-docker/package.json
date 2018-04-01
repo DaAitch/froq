@@ -10,8 +10,9 @@
     "build": "babel -d ./lib src",
     "build:debug": "babel -s -d ./lib src",
     "test": "ava test/*.test.js --verbose",
-    "test:serial": "ava test/*.test.js --verbose --serial",
-    "clean": "rm -rf lib"
+    "test:coverage": "nyc $npm_execpath run test",
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "clean": "rm -rf lib  &&  rm -rf .nyc_output"
   },
   "repository": {
     "type": "git",
@@ -38,9 +39,11 @@
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "babel-register": "^6.26.0",
+    "coveralls": "^3.0.0",
     "froq-docker-util": "^0.0.19",
     "froq-util": "^0.0.19",
-    "node-fetch": "^2.1.2"
+    "node-fetch": "^2.1.2",
+    "nyc": "^11.6.0"
   },
   "ava": {
     "require": [

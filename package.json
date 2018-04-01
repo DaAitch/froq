@@ -1,10 +1,12 @@
 {
   "scripts": {
     "test": "lerna run --parallel test",
+    "test:coverage": "lerna run --parallel test:coverage",
     "build": "lerna run --parallel build",
     "clean": "lerna run --parallel clean",
     "rebuild": "$npm_execpath run clean  &&  $npm_execpath run build",
-    "prepublish": "$npm_execpath run rebuild  &&  $npm_execpath test"
+    "prepublish": "$npm_execpath run rebuild  &&  $npm_execpath test",
+    "coverage": "lerna run coverage"
   },
   "repository": {
     "type": "git",
