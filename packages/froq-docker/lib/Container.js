@@ -1,10 +1,10 @@
-"use strict";
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
 
-var _Exec = require("./Exec");
+var _Exec = require('./Exec');
 
 var _Exec2 = _interopRequireDefault(_Exec);
 

@@ -12,7 +12,7 @@ test.beforeEach(async t => {
 
 test('should pull image, create/start/inpect/stop/wait/remove container', async t => {
     
-    const image = await t.context.docker.pull({fromImage: 'library/httpd', tag: 'latest'});
+    const image = await t.context.docker.pull({fromImage: 'httpd', tag: '2.4'});
 
     const container = await image.createContainer({
         data: {
@@ -62,7 +62,7 @@ test('should build image from tar, fetch homepage, clean up', async t => {
         }),
         (async () => {
             await bs.addFileAsBuffer('Dockerfile', `
-FROM httpd
+FROM httpd:2.4
 COPY index.html /usr/local/apache2/htdocs/index.html
 `);
             await bs.addFileAsBuffer('index.html', 'test_index');
@@ -106,7 +106,7 @@ COPY index.html /usr/local/apache2/htdocs/index.html
 
 test('should attach to container reading logs', async t => {
     
-    const image = await t.context.docker.pull({fromImage: 'library/httpd', tag: 'latest'});
+    const image = await t.context.docker.pull({fromImage: 'httpd', tag: '2.4'});
 
     const container = await image.createContainer({
         data: {
@@ -147,7 +147,7 @@ test('should attach to container reading logs', async t => {
 
 test('should create test.html via exec commands and test via fetch', async t => {
     
-    const image = await t.context.docker.pull({fromImage: 'library/httpd', tag: 'latest'});
+    const image = await t.context.docker.pull({fromImage: 'httpd', tag: '2.4'});
 
     const container = await image.createContainer({
         data: {
@@ -185,9 +185,14 @@ test('should create test.html via exec commands and test via fetch', async t => 
     const inspection = await container.inspect();
     const address = inspection.getFirstHostAddress('80/tcp');
 
-    const response = await retry({try: () => fetch(`http://${address}/test.html`)});
-    const text = await response.text();
-    t.is(text, 'test_index\n');
+    await retry({try: async () => {
+        const resp = await fetch(`http://${address}/test.html`);
+        const text = await resp.text();
+
+        if (text !== 'test_index\n') {
+            throw new Error('not matching');
+        }
+    }, defer: 100});
 
     await container.stop();
     await container.wait();
