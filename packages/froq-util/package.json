@@ -12,7 +12,6 @@
     "build:debug": "babel -s -d ./lib src",
     "test": "echo 'froq-util has no tests.'",
     "test:coverage": "nyc $npm_execpath run test",
-    "coverage": "nyc report --reporter=text-lcov | coveralls",
     "clean": "rm -rf lib  &&  rm -rf .nyc_output"
   },
   "repository": {
